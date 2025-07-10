@@ -22,15 +22,15 @@ export default defineConfig(({ mode }) => ({
     cors: true,
     proxy: {
       // Docker setup
-      // "^/(api)|(media)|(static)/": {
-      //   target: "http://api:8000",
-      //   changeOrigin: true,
-      // },
+       "^/(api)|(media)|(static)/": {
+         target: "http://api:8000",
+         changeOrigin: true,
+       },
       // Local setup
-      "^/(api)|(media)|(static)/": {
-        target: "http://localhost:8000",
-        changeOrigin: true,
-      },
+      //"^/(api)|(media)|(static)/": {
+      //  target: "http://localhost:8000",
+      //  changeOrigin: true,
+      //},
     },
   },
   esbuild: {

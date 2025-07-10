@@ -25,7 +25,7 @@ const LoginPage: React.FC = memo(() => {
             name="auth-mode"
             aria-label={t("Login")}
             checked={mode === "login"}
-            onClick={() => setMode("login")}
+            onChange={() => setMode("login")}
             data-testid="mode-login"
           />
           <input
@@ -34,7 +34,7 @@ const LoginPage: React.FC = memo(() => {
             name="auth-mode"
             aria-label={t("Register")}
             checked={mode === "register"}
-            onClick={() => setMode("register")}
+            onChange={() => setMode("register")}
             data-testid="mode-register"
           />
         </div>

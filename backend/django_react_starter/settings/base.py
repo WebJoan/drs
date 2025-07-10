@@ -12,6 +12,7 @@ APP_NAME = "django_react_starter"
 APP_VERSION = os.getenv("APP_VERSION", "")
 SESSION_COOKIE_NAME = f"{APP_NAME}-sessionid"
 CSRF_COOKIE_NAME = f"{APP_NAME}-csrftoken"
+CSRF_COOKIE_HTTPONLY = False  # Allow JavaScript to read CSRF cookie for SPA
 
 DEBUG = False
 SECRET_KEY = os.getenv("SECRET_KEY")
