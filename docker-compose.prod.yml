@@ -16,7 +16,7 @@ services:
       - api
       - front
     networks:
-      - ${PROJECT_NAME}_network
+      - prod_network
     command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
 
   certbot:
@@ -41,7 +41,7 @@ services:
       - postgres
       - redis
     networks:
-      - ${PROJECT_NAME}_network
+      - prod_network
     volumes:
       - ./backend/media:/home/app/backend/media
       - ./backend/static:/home/app/backend/static
@@ -70,7 +70,7 @@ services:
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=${DB_NAME}
     networks:
-      - ${PROJECT_NAME}_network
+      - prod_network
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
 
@@ -79,7 +79,7 @@ services:
     image: redis:7-alpine
     restart: always
     networks:
-      - ${PROJECT_NAME}_network
+      - prod_network
     volumes:
       - ./data/redis:/data
 
@@ -93,7 +93,7 @@ services:
       - postgres
       - redis
     networks:
-      - ${PROJECT_NAME}_network
+      - prod_network
     volumes:
       - ./backend:/home/app/backend
     command: celery -A config worker -l info
@@ -108,11 +108,11 @@ services:
       - postgres
       - redis
     networks:
-      - ${PROJECT_NAME}_network
+      - prod_network
     volumes:
       - ./backend:/home/app/backend
     command: celery -A config beat -l info
 
 networks:
-  ${PROJECT_NAME}_network:
+  prod_network:
     driver: bridge 
