@@ -1,132 +1,118 @@
 services:
-  traefik:
-    image: traefik:v3.2
-    container_name: traefik
-    restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
-    networks:
-      - django_react_starter_network
+  nginx:
+    image: nginx:alpine
+    container_name: ${PROJECT_NAME}_nginx
+    restart: always
     ports:
       - "80:80"
       - "443:443"
-    environment:
-      - CF_API_EMAIL=${CF_API_EMAIL}
-      - CF_DNS_API_TOKEN=${CF_DNS_API_TOKEN}
     volumes:
-      - /etc/localtime:/etc/localtime:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./traefik-data/traefik.yml:/traefik.yml:ro
-      - ./traefik-data/acme.json:/acme.json
-      - ./traefik-data/config.yml:/config.yml:ro
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.traefik.entrypoints=http"
-      - "traefik.http.routers.traefik.rule=Host(`traefik.${DOMAIN}`)"
-      - "traefik.http.middlewares.traefik-auth.basicauth.users=${TRAEFIK_USER}:${TRAEFIK_PASSWORD}"
-      - "traefik.http.middlewares.traefik-https-redirect.redirectscheme.scheme=https"
-      - "traefik.http.middlewares.sslheader.headers.customrequestheaders.X-Forwarded-Proto=https"
-      - "traefik.http.routers.traefik.middlewares=traefik-https-redirect"
-      - "traefik.http.routers.traefik-secure.entrypoints=https"
-      - "traefik.http.routers.traefik-secure.rule=Host(`traefik.${DOMAIN}`)"
-      - "traefik.http.routers.traefik-secure.middlewares=traefik-auth"
-      - "traefik.http.routers.traefik-secure.tls=true"
-      - "traefik.http.routers.traefik-secure.tls.certresolver=cloudflare"
-      - "traefik.http.routers.traefik-secure.tls.domains[0].main=${DOMAIN}"
-      - "traefik.http.routers.traefik-secure.tls.domains[0].sans=*.${DOMAIN}"
-      - "traefik.http.routers.traefik-secure.service=api@internal"
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/ssl:/etc/nginx/ssl
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+      - ./frontend/dist:/usr/share/nginx/html
+    depends_on:
+      - api
+      - front
+    networks:
+      - ${PROJECT_NAME}_network
+    command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+
+  certbot:
+    image: certbot/certbot
+    container_name: ${PROJECT_NAME}_certbot
+    restart: unless-stopped
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
 
   api:
-    image: django_react_starter_api_prod
-    container_name: django_react_starter_api_prod
+    image: ${PROJECT_NAME}_api_prod
+    container_name: ${PROJECT_NAME}_api
     build:
       context: .
       dockerfile: ./docker/Dockerfile.prod
     env_file:
       - ./backend/.env.prod
+    restart: always
     depends_on:
       - postgres
-      - rabbitmq
-      - meilisearch
+      - redis
     networks:
-      - django_react_starter_network
+      - ${PROJECT_NAME}_network
     volumes:
       - ./backend/media:/home/app/backend/media
       - ./backend/static:/home/app/backend/static
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.api.entrypoints=http"
-      - "traefik.http.routers.api.rule=Host(`${DOMAIN}`) && (PathPrefix(`/api`) || PathPrefix(`/admin`) || PathPrefix(`/static`) || PathPrefix(`/media`))"
-      - "traefik.http.middlewares.api-https-redirect.redirectscheme.scheme=https"
-      - "traefik.http.routers.api.middlewares=api-https-redirect"
-      - "traefik.http.routers.api-secure.entrypoints=https"
-      - "traefik.http.routers.api-secure.rule=Host(`${DOMAIN}`) && (PathPrefix(`/api`) || PathPrefix(`/admin`) || PathPrefix(`/static`) || PathPrefix(`/media`))"
-      - "traefik.http.routers.api-secure.tls=true"
-      - "traefik.http.routers.api-secure.tls.certresolver=cloudflare"
-      - "traefik.http.routers.api-secure.service=api"
-      - "traefik.http.services.api.loadbalancer.server.port=8000"
-    restart: unless-stopped
+    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 4 --threads 4
 
   front:
-    image: django_react_starter_front_prod
-    container_name: django_react_starter_front_prod
-    build:
-      context: ./shadcn-admin
-      dockerfile: Dockerfile
-      args:
-        - VITE_API_URL=https://${DOMAIN}
-    networks:
-      - django_react_starter_network
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.front.entrypoints=http"
-      - "traefik.http.routers.front.rule=Host(`${DOMAIN}`)"
-      - "traefik.http.middlewares.front-https-redirect.redirectscheme.scheme=https"
-      - "traefik.http.routers.front.middlewares=front-https-redirect"
-      - "traefik.http.routers.front-secure.entrypoints=https"
-      - "traefik.http.routers.front-secure.rule=Host(`${DOMAIN}`)"
-      - "traefik.http.routers.front-secure.tls=true"
-      - "traefik.http.routers.front-secure.tls.certresolver=cloudflare"
-      - "traefik.http.routers.front-secure.service=front"
-      - "traefik.http.services.front.loadbalancer.server.port=80"
-    restart: unless-stopped
+    image: node:22.14.0-slim
+    container_name: ${PROJECT_NAME}_front_build
+    working_dir: /app
+    command: bash -c "npm install -g pnpm && pnpm install && pnpm run build"
+    environment:
+      - NODE_ENV=production
+      - VITE_API_URL=https://${DOMAIN}/api
+    volumes:
+      - ./shadcn-admin:/app
+      - ./frontend/dist:/app/dist
+    profiles:
+      - build
 
   postgres:
-    container_name: django_react_starter_postgres_prod
+    container_name: ${PROJECT_NAME}_postgres
     image: postgis/postgis:16-3.4-alpine
+    restart: always
     environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
     networks:
-      - django_react_starter_network
+      - ${PROJECT_NAME}_network
     volumes:
-      - ./data/postgres_prod:/var/lib/postgresql/data
-    restart: unless-stopped
+      - ./data/postgres:/var/lib/postgresql/data
 
-  rabbitmq:
-    container_name: django_react_starter_rabbitmq_prod
-    image: rabbitmq:4.0.8-management
-    environment:
-      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
-      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
+  redis:
+    container_name: ${PROJECT_NAME}_redis
+    image: redis:7-alpine
+    restart: always
     networks:
-      - django_react_starter_network
+      - ${PROJECT_NAME}_network
     volumes:
-      - ./data/rabbitmq_prod:/var/lib/rabbitmq/mnesia
-    restart: unless-stopped
+      - ./data/redis:/data
 
-  meilisearch:
-    container_name: django_react_starter_meilisearch_prod
-    image: getmeili/meilisearch:v1.13.3
-    environment:
-      - MEILI_MASTER_KEY=${MEILI_MASTER_KEY}
+  celery:
+    image: ${PROJECT_NAME}_api_prod
+    container_name: ${PROJECT_NAME}_celery
+    restart: always
+    env_file:
+      - ./backend/.env.prod
+    depends_on:
+      - postgres
+      - redis
     networks:
-      - django_react_starter_network
+      - ${PROJECT_NAME}_network
     volumes:
-      - ./data/meilisearch_prod:/meili_data
-    restart: unless-stopped
+      - ./backend:/home/app/backend
+    command: celery -A config worker -l info
+
+  celery-beat:
+    image: ${PROJECT_NAME}_api_prod
+    container_name: ${PROJECT_NAME}_celery_beat
+    restart: always
+    env_file:
+      - ./backend/.env.prod
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - ${PROJECT_NAME}_network
+    volumes:
+      - ./backend:/home/app/backend
+    command: celery -A config beat -l info
 
 networks:
-  django_react_starter_network:
+  ${PROJECT_NAME}_network:
     driver: bridge 

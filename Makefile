@@ -124,6 +124,71 @@ help:
 	@echo "start.lite: 				Starts only dependencies containers using docker compose"
 	@echo "					(postgres, rabbitmq, meilisearch, ...)"
 	@echo "stop: 					Stops the containers using docker compose"
+	@echo "----- PRODUCTION ----------------------------------------------------------------------"
+	@echo "prod.deploy: 				🚀 Полный деплой на продакшн (настройка, SSL, запуск)"
+	@echo "prod.setup: 				Интерактивная настройка продакшн окружения"
+	@echo "prod.build: 				Сборка продакшн образов"
+	@echo "prod.start: 				Запуск продакшн контейнеров"
+	@echo "prod.stop: 				Остановка продакшн контейнеров"
+	@echo "prod.restart: 				Перезапуск продакшн контейнеров"
+	@echo "prod.update: 				Обновление кода и перезапуск"
+	@echo "prod.logs: 				Просмотр логов продакшн контейнеров"
 	@echo "----- OTHERS --------------------------------------------------------------------------"
 	@echo "setup_hooks: 				Setups the git pre-commit hooks"
 	@echo "help: 					Prints this help message"
+
+# --------------------------------------------------
+# Production
+# --------------------------------------------------
+prod.setup:
+	@chmod +x scripts/setup-prod.sh
+	@chmod +x scripts/init-letsencrypt.sh
+	@chmod +x scripts/apply-nginx-ssl.sh
+	@./scripts/setup-prod.sh
+
+prod.ssl:
+	@./scripts/init-letsencrypt.sh
+	@./scripts/apply-nginx-ssl.sh
+
+prod.build:
+	@docker compose -f docker-compose.prod.yml --env-file .env.prod build
+
+prod.migrate:
+	@docker compose -f docker-compose.prod.yml --env-file .env.prod run --rm api python backend/manage.py migrate
+	@docker compose -f docker-compose.prod.yml --env-file .env.prod run --rm api python backend/manage.py collectstatic --noinput
+
+prod.start:
+	@docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
+
+prod.stop:
+	@docker compose -f docker-compose.prod.yml --env-file .env.prod down
+
+prod.logs:
+	@docker compose -f docker-compose.prod.yml --env-file .env.prod logs -f
+
+prod.deploy: prod.setup
+	@echo "Сборка образов..."
+	@$(MAKE) -s prod.build
+	@echo "Сборка фронтенда..."
+	@docker compose -f docker-compose.prod.yml --env-file .env.prod --profile build up front
+	@echo "Запуск базовых сервисов..."
+	@docker compose -f docker-compose.prod.yml --env-file .env.prod up -d postgres redis
+	@sleep 5
+	@echo "Выполнение миграций..."
+	@$(MAKE) -s prod.migrate
+	@echo "Получение SSL сертификата..."
+	@$(MAKE) -s prod.ssl
+	@echo "Запуск всех сервисов..."
+	@$(MAKE) -s prod.start
+	@echo "✅ Деплой завершен! Сайт доступен по адресу: https://$$(grep DOMAIN .env.prod | cut -d '=' -f2)"
+
+prod.restart:
+	@$(MAKE) -s prod.stop
+	@$(MAKE) -s prod.start
+
+prod.update:
+	@git pull
+	@$(MAKE) -s prod.build
+	@docker compose -f docker-compose.prod.yml --env-file .env.prod --profile build up front
+	@$(MAKE) -s prod.migrate
+	@$(MAKE) -s prod.restart

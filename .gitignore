@@ -16,3 +16,11 @@ data/
 node_modules/
 .tanstack
 .pnpm-store
+
+# Production
+.env.prod
+backend/.env.prod
+certbot/
+nginx/conf.d/
+nginx/ssl/
+frontend/dist/

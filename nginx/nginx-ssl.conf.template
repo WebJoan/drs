@@ -1,0 +1,102 @@
+upstream api {
+    server api:8000;
+}
+
+server {
+    listen 80;
+    server_name ${DOMAIN};
+    
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+    
+    location / {
+        return 301 https://$server_name$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl http2;
+    server_name ${DOMAIN};
+
+    # SSL сертификаты
+    ssl_certificate /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+    # Безопасность
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "no-referrer-when-downgrade" always;
+    add_header Content-Security-Policy "default-src 'self' http: https: data: blob: 'unsafe-inline'" always;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+
+    # Логи
+    access_log /var/log/nginx/${DOMAIN}.access.log;
+    error_log /var/log/nginx/${DOMAIN}.error.log;
+
+    # Размер загружаемых файлов
+    client_max_body_size 100M;
+
+    # Статические файлы фронтенда
+    location / {
+        root /usr/share/nginx/html;
+        try_files $uri $uri/ /index.html;
+        
+        # Кэширование статики
+        location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+            expires 1y;
+            add_header Cache-Control "public, immutable";
+        }
+    }
+
+    # API проксирование
+    location /api {
+        proxy_pass http://api;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_redirect off;
+        
+        # Таймауты для длительных запросов
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+
+    # Статические файлы Django
+    location /static/ {
+        alias /home/app/backend/static/;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # Медиа файлы Django
+    location /media/ {
+        alias /home/app/backend/media/;
+        expires 1y;
+        add_header Cache-Control "public";
+    }
+
+    # WebSocket поддержка (если нужно)
+    location /ws {
+        proxy_pass http://api;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Health check
+    location /health {
+        access_log off;
+        return 200 "healthy\n";
+        add_header Content-Type text/plain;
+    }
+} 
