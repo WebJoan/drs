@@ -44,12 +44,14 @@ class UserModelAdmin(UserAdmin):
         "email",
         "first_name",
         "last_name",
+        "role",
         "is_active",
         "is_staff",
         "is_superuser",
     )
-    search_fields = ("email", "first_name", "last_name")
+    search_fields = ("email", "first_name", "last_name", "role")
     list_filter = (
+        "role",
         "is_active",
         "is_staff",
         "is_superuser",
@@ -76,6 +78,7 @@ class UserModelAdmin(UserAdmin):
                     "first_name",
                     "last_name",
                     "password",
+                    "role",
                 )
             },
         ),

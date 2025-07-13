@@ -24,13 +24,16 @@ services:
     image: node:22.14.0-slim
     container_name: django_react_starter_front
     working_dir: /app
-    command: bash -c "yarn install && yarn start --host"
+    command: bash -c "npm install -g pnpm && pnpm install && pnpm run dev"
+    environment:
+      - NODE_ENV=development
+      - DOCKER_ENV=true
     networks:
       - django_react_starter_network
     ports:
-      - "3000:3000"
+      - "5173:5173"
     volumes:
-      - ./frontend:/app
+      - ./shadcn-admin:/app
     profiles:
       - all
 
@@ -38,8 +41,8 @@ services:
     container_name: django_react_starter_postgres
     image: postgis/postgis:16-3.4-alpine
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_USER=django_react_starter
+      - POSTGRES_PASSWORD=django_react_starter
       - POSTGRES_DB=django_react_starter
     networks:
       - django_react_starter_network

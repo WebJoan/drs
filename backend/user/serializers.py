@@ -11,24 +11,50 @@ User = get_user_model()
 
 
 class UserSimpleSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, required=False)
+
     class Meta:
         model = User
-        fields = ["id", "email", "first_name", "last_name"]
+        fields = ["id", "email", "first_name", "last_name", "password"]
         extra_kwargs = {
             "first_name": {"required": True},
             "last_name": {"required": True},
             "email": {"required": True},
+            "password": {"write_only": True},
         }
 
-    @staticmethod
-    def create(validated_data: Dict) -> "UserType":
-        raise NotImplementedError
+    def create(self, validated_data: Dict) -> "UserType":
+        """Create a new user."""
+        password = validated_data.pop("password", None)
+        user = User.objects.create(
+            email=validated_data["email"],
+            username=validated_data["email"],
+            first_name=validated_data["first_name"],
+            last_name=validated_data["last_name"],
+            is_active=True,
+        )
+        if password:
+            user.set_password(password)
+        else:
+            # Set a random password if none provided
+            user.set_unusable_password()
+        user.save()
+        return user
 
     def update(self, user: "UserType", validated_data: Dict) -> "UserType":
-        # User
-        user.first_name = validated_data["first_name"]
-        user.last_name = validated_data["last_name"]
-        user.email = validated_data["email"]
+        """Update user data."""
+        password = validated_data.pop("password", None)
+        
+        # Update basic fields
+        user.first_name = validated_data.get("first_name", user.first_name)
+        user.last_name = validated_data.get("last_name", user.last_name)
+        user.email = validated_data.get("email", user.email)
+        user.username = user.email  # Keep username in sync with email
+        
+        # Update password if provided
+        if password:
+            user.set_password(password)
+        
         user.save()
         return user
 

@@ -32,7 +32,7 @@ def unindex_users(ids: List[int]) -> Dict[str, str]:
 
 scheduled_cron_tasks = {
     "index_all_users_atomically": {
-        "task": "users.tasks.index_all_users_atomically",
+        "task": "user.tasks.index_all_users_atomically",
         "schedule": crontab(hour="1", minute="0"),
     }
 }

@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     "core",
     "health",
     "user",
+    "goods",
 ]
 
 MIDDLEWARE = [
@@ -101,9 +102,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 POSTGRES_HOST = os.getenv("POSTGRES_HOST", "postgres")
 POSTGRES_PORT = os.getenv("POSTGRES_PORT", 5432)
-POSTGRES_USER = os.getenv("POSTGRES_USER")
-POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
-POSTGRES_DB = os.getenv("POSTGRES_DB")
+POSTGRES_USER = os.getenv("POSTGRES_USER", "django_react_starter")
+POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "django_react_starter")
+POSTGRES_DB = os.getenv("POSTGRES_DB", "django_react_starter")
 
 DATABASES = {
     "default": {
@@ -256,4 +257,5 @@ CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = "UTC"
 
 # Queues
-RABBITMQ_USER_QUEUE = "user-queue"
+RABBITMQ_USER_QUEUE = os.getenv("RABBITMQ_USER_QUEUE", "user-queue")
+RABBITMQ_GOODS_QUEUE = os.getenv("RABBITMQ_GOODS_QUEUE", "goods-queue")

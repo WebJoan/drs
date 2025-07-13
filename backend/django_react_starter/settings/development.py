@@ -11,10 +11,10 @@ ALLOWED_HOSTS = [
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost",
     "http://127.0.0.1",
-    "http://localhost:3000",  # React dev server
+    "http://localhost:5173",  # React dev server
     "http://localhost:8000/",
 ]
-SITE_DOMAIN = "http://localhost:3000"  # React dev server
+SITE_DOMAIN = "http://localhost:5173"  # React dev server
 SECRET_KEY = "yq-^$c^8r-^zebn#n+ilw3zegt9^9!b9@)-sv1abpca3i%hrko"
 DJANGO_SUPERUSER_EMAIL = "admin@gmail.com"
 DJANGO_SUPERUSER_PASSWORD = "password"

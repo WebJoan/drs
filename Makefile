@@ -28,6 +28,9 @@ _manage_py:
 backend.bash:
 	$(BACKEND_DOCKER_EXEC) bash
 
+backend.index_products:
+	@$(MAKE) -s _manage_py cmd=index_products
+
 backend.makemigrations:
 	@$(MAKE) -s _manage_py cmd=makemigrations
 

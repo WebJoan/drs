@@ -66,3 +66,79 @@ class CurrentUserViewSet(ImprovedViewSet):
         user = serializer.save()
         update_session_auth_hash(request, user)
         return Response(None, status.HTTP_204_NO_CONTENT)
+
+
+class UserViewSet(ImprovedViewSet):
+    """For managing users list."""
+
+    default_permission_classes = (IsAuthenticated,)
+    default_serializer_class = UserSimpleSerializer
+    queryset = User.objects.all()
+
+    @extend_schema(
+        description="Get list of all users.",
+        responses={200: UserSimpleSerializer(many=True)},
+    )
+    def list(self, request: Request) -> Response:
+        """Get all users."""
+        users = self.get_queryset()
+        serializer = self.get_serializer(users, many=True)
+        return Response(serializer.data, status.HTTP_200_OK)
+
+    @extend_schema(
+        description="Get a specific user.",
+        responses={200: UserSimpleSerializer},
+    )
+    def retrieve(self, request: Request, pk: int = None) -> Response:
+        """Get a specific user."""
+        user = self.get_object()
+        serializer = self.get_serializer(user)
+        return Response(serializer.data, status.HTTP_200_OK)
+
+    @extend_schema(
+        description="Create a new user.",
+        request=UserSimpleSerializer,
+        responses={201: UserSimpleSerializer},
+    )
+    def create(self, request: Request) -> Response:
+        """Create a new user."""
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return Response(serializer.data, status.HTTP_201_CREATED)
+
+    @extend_schema(
+        description="Update a user.",
+        request=UserSimpleSerializer,
+        responses={200: UserSimpleSerializer},
+    )
+    def update(self, request: Request, pk: int = None) -> Response:
+        """Update a user."""
+        user = self.get_object()
+        serializer = self.get_serializer(user, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status.HTTP_200_OK)
+
+    @extend_schema(
+        description="Partially update a user.",
+        request=UserSimpleSerializer,
+        responses={200: UserSimpleSerializer},
+    )
+    def partial_update(self, request: Request, pk: int = None) -> Response:
+        """Partially update a user."""
+        user = self.get_object()
+        serializer = self.get_serializer(user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status.HTTP_200_OK)
+
+    @extend_schema(
+        description="Delete a user.",
+        responses={204: None},
+    )
+    def destroy(self, request: Request, pk: int = None) -> Response:
+        """Delete a user."""
+        user = self.get_object()
+        user.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

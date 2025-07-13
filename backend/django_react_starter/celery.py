@@ -1,9 +1,15 @@
+import os
 from celery import Celery
 from django.conf import settings
 from kombu import Exchange, Queue
 
+# Настройка Django settings перед использованием settings
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'django_react_starter.settings.development')
+
+import django
+django.setup()
+
 from django_react_starter.settings.base import CELERY_CONFIG_PREFIX
-from user.tasks import scheduled_cron_tasks as user_schedule
 
 app = Celery("django_react_starter")
 app.config_from_object("django.conf:settings", namespace=CELERY_CONFIG_PREFIX)
@@ -15,7 +21,15 @@ app.conf.task_queues = [
         Exchange(settings.RABBITMQ_USER_QUEUE),
         routing_key=settings.RABBITMQ_USER_QUEUE,
     ),
+    Queue(
+        settings.RABBITMQ_GOODS_QUEUE,
+        Exchange(settings.RABBITMQ_GOODS_QUEUE),
+        routing_key=settings.RABBITMQ_GOODS_QUEUE,
+    ),
 ]
+
+# Импортируем задачи после настройки Django
+from user.tasks import scheduled_cron_tasks as user_schedule
 
 app.conf.beat_schedule = {
     **user_schedule,

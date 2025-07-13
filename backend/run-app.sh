@@ -2,6 +2,12 @@
 
 set -e
 
+# Load environment variables from env_settings.txt
+if [ -f "env_settings.txt" ]; then
+    echo "[run-app] Loading environment variables from env_settings.txt"
+    export $(grep -v '^#' env_settings.txt | grep -v '^$' | xargs)
+fi
+
 # Choose settings
 if [[ "$RUN_AS_DEV_SERVER" == 1 ]]; then
   SETTINGS=django_react_starter.settings.development

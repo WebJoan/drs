@@ -9,12 +9,13 @@ from rest_framework import routers
 from authentication.views import AuthViewSet
 from core.views import AppViewSet, index, robots_txt
 from health.views import HealthViewSet
-from user.views import CurrentUserViewSet
+from user.views import CurrentUserViewSet, UserViewSet
 
 router = routers.SimpleRouter()
 router.register("app", AppViewSet, basename="app")
 router.register("auth", AuthViewSet, basename="auth")
 router.register("self", CurrentUserViewSet, basename="self")
+router.register("users", UserViewSet, basename="users")
 router.register("health", HealthViewSet, basename="health")
 
 API_ROOT = "api"
@@ -24,6 +25,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     *static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT),
     path(f"{API_ROOT}/v1/", include(router.urls)),
+    path(f"{API_ROOT}/v1/goods/", include("goods.urls")),
     path("", include("django_prometheus.urls")),
 ]
 

@@ -12,7 +12,20 @@ LOGGER = logging.getLogger("default")
 class User(ExportModelOperationsMixin("user"), AbstractUser):  # ty: ignore
     profile: "Profile"
 
+    class RoleChoices(models.TextChoices):
+        PRODUCT_MANAGER = 'product', 'Product Manager'
+        SALES_MANAGER = 'sales', 'Sales Manager'
+        ADMIN = 'admin', 'Admin'
+        USER = 'user', 'User'
+
     email = models.EmailField(unique=True, null=False, blank=False)
+    role = models.CharField(
+        max_length=20,
+        choices=RoleChoices.choices,
+        default=RoleChoices.USER,
+        verbose_name="Role",
+        help_text="User role in the system",
+    )
 
     def save(self, *args: Any, **kwargs: Any) -> None:
         created = self.pk is None
@@ -24,6 +37,10 @@ class User(ExportModelOperationsMixin("user"), AbstractUser):  # ty: ignore
 
     class Meta:
         ordering = ["id"]
+        permissions = [
+            ("is_product_manager", "Can manage products"),
+            ("is_sales_manager", "Can manage sales"),
+        ]
 
     def __str__(self) -> str:
         return self.email
@@ -31,6 +48,16 @@ class User(ExportModelOperationsMixin("user"), AbstractUser):  # ty: ignore
     @property
     def indexed_name(self) -> str:
         return f"user_{self.id}"
+
+    @property
+    def is_product_manager(self) -> bool:
+        """Check if user is a product manager"""
+        return self.role == self.RoleChoices.PRODUCT_MANAGER
+
+    @property
+    def is_sales_manager(self) -> bool:
+        """Check if user is a sales manager"""
+        return self.role == self.RoleChoices.SALES_MANAGER
 
 
 class Profile(models.Model):
