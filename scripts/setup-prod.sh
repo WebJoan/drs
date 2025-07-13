@@ -25,8 +25,8 @@ echo
 read -p "Введите имя БД [django_db]: " DB_NAME
 DB_NAME=${DB_NAME:-django_db}
 
-# Генерация SECRET_KEY для Django
-SECRET_KEY=$(python3 -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())')
+# Генерация SECRET_KEY для Django (без зависимости от Django)
+SECRET_KEY=$(python3 -c 'import secrets; import string; print("".join(secrets.choice(string.ascii_letters + string.digits + "!@#$%^&*(-_=+)") for _ in range(50)))')
 
 echo -e "\n${YELLOW}Создание конфигурационных файлов...${NC}"
 
