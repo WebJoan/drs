@@ -4,6 +4,7 @@ import logging
 import mysql.connector
 from celery import shared_task
 from django.db import transaction
+from django.db.models import Q
 from mysql.connector import Error
 from django.conf import settings
 from user.models import User
@@ -358,16 +359,11 @@ def index_products(product_ids):
     try:
         logger.info(f"Начинаем индексацию товаров с ID: {product_ids}")
         
-        # Получаем товары по ID
-        products = Product.objects.filter(id__in=product_ids).select_related(
-            'brand', 'subgroup__group', 'product_manager'
-        )
+        # Индексируем товары используя Q-объект
+        ProductIndexer.index_from_query(Q(pk__in=product_ids))
         
-        # Индексируем товары
-        ProductIndexer.index_objects(products)
-        
-        logger.info(f"Успешно проиндексировано {products.count()} товаров")
-        return f"Проиндексировано {products.count()} товаров"
+        logger.info(f"Успешно проиндексировано {len(product_ids)} товаров")
+        return f"Проиндексировано {len(product_ids)} товаров"
         
     except Exception as e:
         logger.error(f"Ошибка при индексации товаров {product_ids}: {e}")
@@ -383,12 +379,11 @@ def unindex_products(product_ids):
         logger.info(f"Начинаем удаление товаров из индекса: {product_ids}")
         
         # Удаляем товары из индекса
-        ProductIndexer.unindex_objects(product_ids)
+        ProductIndexer.unindex_multiple(product_ids)
         
         logger.info(f"Успешно удалено {len(product_ids)} товаров из индекса")
         return f"Удалено {len(product_ids)} товаров из индекса"
         
     except Exception as e:
         logger.error(f"Ошибка при удалении товаров из индекса {product_ids}: {e}")
-        raise
-        return f"Ошибка экспорта: {str(e)}" 
+        raise 

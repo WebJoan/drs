@@ -5,6 +5,7 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.conf import settings
 from meilisearch import Client
+from .utils import prepare_search_query
 from .models import Product, Brand, ProductSubgroup, ProductGroup
 from .serializers import (
     ProductSerializer, 
@@ -100,7 +101,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'])
     def search(self, request):
-        """Поиск товаров через MeiliSearch"""
+        """Поиск товаров через MeiliSearch с поддержкой транслитерации"""
         query = request.query_params.get('q', '')
         
         if not query:
@@ -109,6 +110,9 @@ class ProductViewSet(viewsets.ModelViewSet):
         try:
             # Подключаемся к MeiliSearch
             client = Client(settings.MEILISEARCH_HOST, settings.MEILISEARCH_API_KEY)
+            
+            # Подготавливаем запрос с вариантами транслитерации
+            search_variants = prepare_search_query(query)
             
             # Строим фильтры для поиска
             filters = []
@@ -148,14 +152,38 @@ class ProductViewSet(viewsets.ModelViewSet):
             if filter_str:
                 search_params['filter'] = filter_str
             
-            # Выполняем поиск
-            search_results = client.index('products').search(query, search_params)
+            # Выполняем поиск по всем вариантам транслитерации
+            all_results = []
+            seen_ids = set()
+            
+            for search_variant in search_variants:
+                if search_variant.strip():  # Пропускаем пустые варианты
+                    try:
+                        variant_results = client.index('products').search(search_variant, search_params)
+                        
+                        # Добавляем только уникальные результаты
+                        for hit in variant_results['hits']:
+                            if hit['id'] not in seen_ids:
+                                all_results.append(hit)
+                                seen_ids.add(hit['id'])
+                    except Exception as variant_error:
+                        # Логируем ошибку для конкретного варианта, но продолжаем
+                        print(f"Ошибка поиска для варианта '{search_variant}': {variant_error}")
+                        continue
+            
+            # Сортируем результаты по релевантности (MeiliSearch уже сортирует)
+            # Ограничиваем количество результатов
+            limit = int(request.query_params.get('limit', 50))
+            offset = int(request.query_params.get('offset', 0))
+            
+            paginated_results = all_results[offset:offset + limit]
             
             return Response({
-                'results': search_results['hits'],
-                'total': search_results['nbHits'],
+                'results': paginated_results,
+                'total': len(all_results),
                 'query': query,
-                'processing_time': search_results['processingTimeMs']
+                'search_variants': search_variants,  # Для отладки
+                'processing_time': 0  # Приблизительное время
             })
             
         except Exception as e:

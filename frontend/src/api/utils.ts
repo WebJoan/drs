@@ -1,5 +1,6 @@
 import { CSRF_TOKEN_COOKIE_NAME, CSRF_TOKEN_HEADER_NAME } from "@/api/config";
 import Cookies from "js-cookie";
+import type { QueryClient } from "@tanstack/react-query";
 
 type FetchOptions = {
   data?: Record<string, any>;
@@ -41,4 +42,17 @@ export const performRequest = async (
     errors: errorResponse,
   };
   return Promise.reject(errorPayload);
+};
+
+/**
+ * Очищает cookies авторизации и состояние кэша
+ */
+export const clearAuthState = (queryClient: QueryClient): void => {
+  // Очищаем cookies сессии
+  Cookies.remove("django_react_starter-sessionid");
+  Cookies.remove("django_react_starter-csrftoken");
+  
+  // Очищаем кэш запросов
+  queryClient.removeQueries({ queryKey: ["self"] });
+  queryClient.removeQueries({ queryKey: ["auth", "check"] });
 };

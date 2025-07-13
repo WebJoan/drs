@@ -3,6 +3,7 @@ from typing import Any, Dict
 from django_meilisearch_indexer.indexers import MeilisearchModelIndexer
 
 from goods.models import Product
+from goods.utils import TransliterationUtils
 
 
 class ProductIndexer(MeilisearchModelIndexer[Product]):
@@ -27,7 +28,8 @@ class ProductIndexer(MeilisearchModelIndexer[Product]):
             "subgroup_name",
             "group_name",
             "product_manager_name",
-            "tech_params_searchable"
+            "tech_params_searchable",
+            "transliterated_search"
         ],
         "sortableAttributes": [
             "name",
@@ -60,6 +62,16 @@ class ProductIndexer(MeilisearchModelIndexer[Product]):
                 if value is not None
             )
         
+        # Создаем поле для транслитерированного поиска
+        transliterated_search = TransliterationUtils.create_search_text(
+            product.name,
+            product.brand.name if product.brand else "",
+            product.subgroup.name,
+            product.subgroup.group.name,
+            manager.username if manager else "",
+            tech_params_searchable
+        )
+        
         return {
             "id": product.id,
             "name": product.name,
@@ -73,6 +85,7 @@ class ProductIndexer(MeilisearchModelIndexer[Product]):
             "product_manager_name": manager.username if manager else "",
             "tech_params": product.tech_params,
             "tech_params_searchable": tech_params_searchable,
+            "transliterated_search": transliterated_search,
         }
 
     @classmethod

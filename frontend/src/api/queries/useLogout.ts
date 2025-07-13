@@ -1,5 +1,5 @@
 import { API_ROOT_URL } from "@/api/config";
-import { performRequest } from "@/api/utils";
+import { performRequest, clearAuthState } from "@/api/utils";
 import { routeConfigMap } from "@/router";
 import {
   type UseMutationResult,
@@ -20,7 +20,12 @@ export const useLogout: UseLogout = () => {
     mutationFn: async (): Promise<void> =>
       await performRequest(url, { method: "POST" }),
     onSuccess: () => {
-      queryClient.resetQueries({ queryKey: ["self"] });
+      clearAuthState(queryClient);
+      navigate(routeConfigMap.login.path);
+    },
+    onError: () => {
+      // Даже при ошибке очищаем cookies на всякий случай
+      clearAuthState(queryClient);
       navigate(routeConfigMap.login.path);
     },
   });

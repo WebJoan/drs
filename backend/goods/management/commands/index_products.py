@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand
 from django.db import transaction
+from django.db.models import Q
 from goods.models import Product
 from goods.indexers import ProductIndexer
 
@@ -47,7 +48,13 @@ class Command(BaseCommand):
             else:
                 # Обычная индексация
                 self.stdout.write('Выполняем обычную индексацию...')
-                ProductIndexer.index_objects(products)
+                
+                # Получаем ID товаров для индексации
+                product_ids = [product.id for product in products]
+                
+                # Используем Q-объект для фильтрации
+                ProductIndexer.index_from_query(Q(pk__in=product_ids))
+                
                 self.stdout.write(
                     self.style.SUCCESS(f'Индексация завершена! Проиндексировано {total_count} товаров')
                 )

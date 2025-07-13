@@ -1,21 +1,22 @@
 import { API_ROOT_URL } from "@/api/config";
-import { useQuery } from "@tanstack/react-query";
+import { performRequest, clearAuthState } from "@/api/utils";
+import {
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { useMemo } from "react";
 import type { ApiError } from "../types";
-import { performRequest } from "../utils";
 
-export type Self = {
+type Self = {
   id: number;
-  firstName: string;
-  lastName: string;
   email: string;
+  role: string;
 };
 
-export type ApiSelf = {
+type ApiSelf = {
   id: number;
-  first_name: string;
-  last_name: string;
   email: string;
+  role: string;
 };
 
 type UseSelfReturn = {
@@ -25,22 +26,37 @@ type UseSelfReturn = {
   data?: Self;
 };
 
-export const deserializeSelf = (data: ApiSelf): Self => ({
-  id: data.id,
-  firstName: data.first_name,
-  lastName: data.last_name,
-  email: data.email,
-});
+const deserializeSelf = (data: ApiSelf): Self => {
+  return {
+    id: data.id,
+    email: data.email,
+    role: data.role,
+  };
+};
 
 export const useSelf = (): UseSelfReturn => {
   const url = `${API_ROOT_URL}/self/account/`;
+  const queryClient = useQueryClient();
+  
   const { isPending, isError, error, data } = useQuery<ApiSelf, ApiError, Self>(
     {
       queryKey: ["self"],
       queryFn: () => performRequest(url, { method: "GET" }),
       select: deserializeSelf,
+      retry: (failureCount, error) => {
+        // Не повторяем запрос при ошибке 401 (не авторизован)
+        if (error?.status === 401) {
+          return false;
+        }
+        return failureCount < 3;
+      },
     },
   );
+
+  // Если получили ошибку 401, очищаем cookies и кэш
+  if (isError && error?.status === 401) {
+    clearAuthState(queryClient);
+  }
 
   return useMemo(
     () => ({

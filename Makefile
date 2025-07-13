@@ -31,6 +31,9 @@ backend.bash:
 backend.index_products:
 	@$(MAKE) -s _manage_py cmd=index_products
 
+backend.reindex_products:
+	@$(MAKE) -s _manage_py cmd=reindex_products opts="--clear"
+
 backend.makemigrations:
 	@$(MAKE) -s _manage_py cmd=makemigrations
 

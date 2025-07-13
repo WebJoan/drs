@@ -12,3 +12,7 @@
 
 ## Postgres
 data/
+
+node_modules/
+.tanstack
+.pnpm-store
