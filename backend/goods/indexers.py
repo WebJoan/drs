@@ -23,13 +23,21 @@ class ProductIndexer(MeilisearchModelIndexer[Product]):
             "group_name"
         ],
         "searchableAttributes": [
-            "name",
-            "brand_name",
-            "subgroup_name",
-            "group_name",
-            "product_manager_name",
-            "tech_params_searchable",
-            "transliterated_search"
+            "name",  # Высший приоритет - точное название товара
+            "brand_name",  # Второй приоритет - название бренда
+            "subgroup_name",  # Третий приоритет - подгруппа
+            "group_name",  # Четвертый приоритет - группа
+            "product_manager_name",  # Пятый приоритет - менеджер
+            "tech_params_searchable",  # Шестой приоритет - технические параметры
+            "transliterated_search"  # Низший приоритет - транслитерированный поиск
+        ],
+        "rankingRules": [
+            "words",  # Количество найденных слов из запроса
+            "typo",   # Количество опечаток
+            "proximity",  # Близость слов друг к другу
+            "attribute",  # Приоритет атрибутов (порядок в searchableAttributes)
+            "sort",   # Сортировка (если указана)
+            "exactness"  # Точность совпадения
         ],
         "sortableAttributes": [
             "name",
@@ -45,7 +53,25 @@ class ProductIndexer(MeilisearchModelIndexer[Product]):
             "group_name",
             "product_manager_name",
             "tech_params"
-        ]
+        ],
+        "stopWords": [],  # Пустой список стоп-слов для технических терминов
+        "synonyms": {},   # Можно добавить синонимы в будущем
+        "distinctAttribute": None,  # Не группируем результаты
+        "typoTolerance": {
+            "enabled": True,
+            "minWordSizeForTypos": {
+                "oneTypo": 4,   # Одна опечатка для слов от 4 символов
+                "twoTypos": 8   # Две опечатки для слов от 8 символов
+            },
+            "disableOnWords": [],  # Не отключаем проверку опечаток для конкретных слов
+            "disableOnAttributes": ["transliterated_search"]  # Отключаем проверку опечаток для транслитерированного поиска
+        },
+        "faceting": {
+            "maxValuesPerFacet": 100
+        },
+        "pagination": {
+            "maxTotalHits": 1000
+        }
     }
 
     @classmethod
@@ -63,6 +89,7 @@ class ProductIndexer(MeilisearchModelIndexer[Product]):
             )
         
         # Создаем поле для транслитерированного поиска
+        # Используем режим без умной фильтрации для индекса, чтобы сохранить все варианты
         transliterated_search = TransliterationUtils.create_search_text(
             product.name,
             product.brand.name if product.brand else "",

@@ -2,16 +2,9 @@ import { ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { ArrowUpDown, MoreHorizontal, Edit, Trash2 } from 'lucide-react'
+import { ArrowUpDown } from 'lucide-react'
 import { Product } from '@/lib/types'
+import { ProductActions } from './product-actions'
 
 export const columns: ColumnDef<Product>[] = [
   {
@@ -47,9 +40,18 @@ export const columns: ColumnDef<Product>[] = [
         </Button>
       )
     },
-    cell: ({ row }) => (
-      <div className="font-medium">{row.getValue('name')}</div>
-    ),
+    cell: ({ row }) => {
+      const product = row.original as any
+      // Поддержка подсветки для результатов поиска из MeiliSearch
+      const name = product._formatted?.name || product.name
+      
+      return (
+        <div 
+          className="font-medium"
+          dangerouslySetInnerHTML={{ __html: name }}
+        />
+      )
+    },
   },
   {
     accessorKey: 'subgroup',
@@ -66,19 +68,27 @@ export const columns: ColumnDef<Product>[] = [
       )
     },
     cell: ({ row }) => {
-      const subgroup = row.original.subgroup
+      const product = row.original as any
+      // Поддержка обоих форматов: Django API (объекты) и MeiliSearch (строки)
+      const subgroupName = product._formatted?.subgroup_name || product.subgroup_name || product.subgroup?.name
+      const groupName = product._formatted?.group_name || product.group_name || product.subgroup?.group?.name
+      
       return (
         <div className="flex flex-col space-y-1">
-          <div className="font-medium">{subgroup.name}</div>
-          <div className="text-sm text-muted-foreground">
-            {subgroup.group.name}
-          </div>
+          <div 
+            className="font-medium"
+            dangerouslySetInnerHTML={{ __html: subgroupName }}
+          />
+          <div 
+            className="text-sm text-muted-foreground"
+            dangerouslySetInnerHTML={{ __html: groupName }}
+          />
         </div>
       )
     },
     sortingFn: (rowA, rowB) => {
-      const a = rowA.original.subgroup.name
-      const b = rowB.original.subgroup.name
+      const a = (rowA.original as any).subgroup_name || rowA.original.subgroup?.name || ''
+      const b = (rowB.original as any).subgroup_name || rowB.original.subgroup?.name || ''
       return a.localeCompare(b)
     },
   },
@@ -97,16 +107,22 @@ export const columns: ColumnDef<Product>[] = [
       )
     },
     cell: ({ row }) => {
-      const brand = row.original.brand
-      return brand ? (
-        <Badge variant="secondary">{brand.name}</Badge>
+      const product = row.original as any
+      // Поддержка обоих форматов: Django API (объекты) и MeiliSearch (строки)
+      const brandName = product._formatted?.brand_name || product.brand_name || product.brand?.name
+      
+      return brandName ? (
+        <Badge 
+          variant="secondary" 
+          dangerouslySetInnerHTML={{ __html: brandName }}
+        />
       ) : (
         <span className="text-muted-foreground">Не указан</span>
       )
     },
     sortingFn: (rowA, rowB) => {
-      const a = rowA.original.brand?.name || ''
-      const b = rowB.original.brand?.name || ''
+      const a = (rowA.original as any).brand_name || rowA.original.brand?.name || ''
+      const b = (rowB.original as any).brand_name || rowB.original.brand?.name || ''
       return a.localeCompare(b)
     },
   },
@@ -125,25 +141,33 @@ export const columns: ColumnDef<Product>[] = [
       )
     },
     cell: ({ row }) => {
-      const manager = row.original.responsible_manager
-      return manager ? (
+      const product = row.original as any
+      // Поддержка обоих форматов: Django API (объекты) и MeiliSearch (строки)
+      const manager = product.responsible_manager
+      const managerName = product.product_manager_name || (manager ? `${manager.first_name} ${manager.last_name}` : '')
+      
+      return managerName ? (
         <div className="flex flex-col space-y-1">
           <div className="font-medium">
-            {manager.first_name} {manager.last_name}
+            {managerName}
           </div>
-          <div className="text-sm text-muted-foreground">{manager.email}</div>
+          {manager?.email && (
+            <div className="text-sm text-muted-foreground">{manager.email}</div>
+          )}
         </div>
       ) : (
         <span className="text-muted-foreground">Не назначен</span>
       )
     },
     sortingFn: (rowA, rowB) => {
-      const a = rowA.original.responsible_manager
-        ? `${rowA.original.responsible_manager.first_name} ${rowA.original.responsible_manager.last_name}`
-        : ''
-      const b = rowB.original.responsible_manager
-        ? `${rowB.original.responsible_manager.first_name} ${rowB.original.responsible_manager.last_name}`
-        : ''
+      const a = (rowA.original as any).product_manager_name || 
+                (rowA.original.responsible_manager 
+                  ? `${rowA.original.responsible_manager.first_name} ${rowA.original.responsible_manager.last_name}`
+                  : '')
+      const b = (rowB.original as any).product_manager_name || 
+                (rowB.original.responsible_manager 
+                  ? `${rowB.original.responsible_manager.first_name} ${rowB.original.responsible_manager.last_name}`
+                  : '')
       return a.localeCompare(b)
     },
   },
@@ -152,45 +176,7 @@ export const columns: ColumnDef<Product>[] = [
     enableHiding: false,
     cell: ({ row }) => {
       const product = row.original
-
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Открыть меню</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Действия</DropdownMenuLabel>
-            <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(product.id.toString())}
-            >
-              Копировать ID
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem 
-              onClick={() => {
-                // Будем обрабатывать через контекст
-                window.dispatchEvent(new CustomEvent('edit-product', { detail: product }))
-              }}
-            >
-              <Edit className="mr-2 h-4 w-4" />
-              Редактировать
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              onClick={() => {
-                // Будем обрабатывать через контекст
-                window.dispatchEvent(new CustomEvent('delete-product', { detail: product }))
-              }}
-              className="text-red-600"
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Удалить
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )
+      return <ProductActions product={product} />
     },
   },
 ] 

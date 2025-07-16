@@ -10,30 +10,49 @@ import { columns } from './components/products-columns'
 import { ProductsDialogs } from './components/products-dialogs'
 import { ProductsPrimaryButtons } from './components/products-primary-buttons'
 import { ProductsTable } from './components/products-table'
-import { ProductsSearch } from './components/products-search'
+
 import ProductsProvider from './context/products-context'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 export default function Products() {
-  const { data: products, isLoading, error, refetch, isRefetching } = useProducts()
-  const [isSearchMode, setIsSearchMode] = useState(false)
-  const [selectedProduct, setSelectedProduct] = useState<any>(null)
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(50)
+  const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [showSearchLoader, setShowSearchLoader] = useState(false)
+
+  // Дебаунс для поиска
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search)
+    }, 300)
+
+    return () => clearTimeout(timer)
+  }, [search])
+  
+  const { data: productsResponse, isLoading, error, refetch, isRefetching } = useProducts(page, pageSize, debouncedSearch)
+
+  // Управление индикатором загрузки поиска
+  useEffect(() => {
+    if (isRefetching && debouncedSearch) {
+      const timer = setTimeout(() => {
+        setShowSearchLoader(true)
+      }, 100) // Показываем лоадер только если запрос длится больше 100мс
+
+      return () => clearTimeout(timer)
+    } else {
+      setShowSearchLoader(false)
+    }
+  }, [isRefetching, debouncedSearch])
 
   const handleRefresh = () => {
     refetch()
   }
 
-  const handleProductSelect = (product: any) => {
-    setSelectedProduct(product)
-    // Можно добавить дополнительную логику, например, открыть модальное окно с деталями
-  }
 
-  const handleClearSearch = () => {
-    setIsSearchMode(false)
-    setSelectedProduct(null)
-  }
 
-  if (isLoading) {
+  // Показываем полноэкранный спиннер только при первоначальной загрузке без данных
+  if (isLoading && !productsResponse) {
     return (
       <div className='flex items-center justify-center h-screen'>
         <div className='text-center'>
@@ -83,8 +102,8 @@ export default function Products() {
               <div>
                 <h1 className='text-3xl font-bold tracking-tight'>Товары</h1>
                 <p className='text-muted-foreground mt-1'>
-                  {products?.length ? (
-                    `Управление ${products.length} товарами и их характеристиками`
+                  {productsResponse?.results?.length ? (
+                    `Управление ${productsResponse.count} товарами (показано ${productsResponse.results.length} из ${productsResponse.count})`
                   ) : (
                     'Управление товарами и их характеристиками'
                   )}
@@ -108,44 +127,41 @@ export default function Products() {
         </div>
 
         <div className='space-y-4'>
-          {/* Переключатель режимов */}
-          <div className='flex items-center space-x-4 mb-6'>
-            <Button
-              variant={!isSearchMode ? 'default' : 'outline'}
-              size='sm'
-              onClick={() => setIsSearchMode(false)}
-            >
-              Все товары
-            </Button>
-            <Button
-              variant={isSearchMode ? 'default' : 'outline'}
-              size='sm'
-              onClick={() => setIsSearchMode(true)}
-            >
-              Поиск MeiliSearch
-            </Button>
-          </div>
+          
 
-          {isSearchMode ? (
-            <ProductsSearch 
-              onProductSelect={handleProductSelect}
-              onClearSearch={handleClearSearch}
+          {productsResponse?.results && productsResponse.results.length > 0 ? (
+            <ProductsTable 
+              data={productsResponse.results} 
+              columns={columns}
+              pagination={{
+                page,
+                pageSize,
+                total: productsResponse.count,
+                totalPages: productsResponse.total_pages,
+                onPageChange: (newPage) => {
+                  setPage(newPage)
+                },
+                onPageSizeChange: (newPageSize) => {
+                  setPageSize(newPageSize)
+                  setPage(1) // Сброс на первую страницу при изменении размера
+                }
+              }}
+              searchValue={search}
+              onSearchChange={(value) => {
+                setSearch(value)
+                setPage(1) // Сброс на первую страницу при поиске
+              }}
+              isSearching={showSearchLoader}
             />
           ) : (
-            <>
-              {products && products.length > 0 ? (
-                <ProductsTable data={products} columns={columns} />
-              ) : (
-                <div className='flex flex-col items-center justify-center py-12 text-center'>
-                  <Package className='h-12 w-12 text-muted-foreground mb-4' />
-                  <h3 className='text-lg font-semibold mb-2'>Нет товаров</h3>
-                  <p className='text-muted-foreground mb-4 max-w-sm'>
-                    Товары не найдены. Создайте первый товар, чтобы начать работу.
-                  </p>
-                  <ProductsPrimaryButtons />
-                </div>
-              )}
-            </>
+            <div className='flex flex-col items-center justify-center py-12 text-center'>
+              <Package className='h-12 w-12 text-muted-foreground mb-4' />
+              <h3 className='text-lg font-semibold mb-2'>Нет товаров</h3>
+              <p className='text-muted-foreground mb-4 max-w-sm'>
+                Товары не найдены. Создайте первый товар, чтобы начать работу.
+              </p>
+              <ProductsPrimaryButtons />
+            </div>
           )}
         </div>
       </Main>

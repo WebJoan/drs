@@ -6,12 +6,21 @@ export interface ApiError {
   detail?: string
 }
 
+// Роли пользователей - соответствуют Django User.RoleChoices
+export enum UserRole {
+  ADMIN = 'admin',
+  PRODUCT_MANAGER = 'product',
+  SALES_MANAGER = 'sales',
+  USER = 'user',
+}
+
 // Типы для пользователя - соответствуют Django UserSimpleSerializer
 export interface User {
   id: number
   email: string
   first_name: string
   last_name: string
+  role: UserRole
 }
 
 export interface ApiUser {
@@ -19,6 +28,7 @@ export interface ApiUser {
   email: string
   first_name: string
   last_name: string
+  role: UserRole
 }
 
 // Типы для создания пользователя

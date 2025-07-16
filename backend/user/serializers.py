@@ -15,12 +15,13 @@ class UserSimpleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["id", "email", "first_name", "last_name", "password"]
+        fields = ["id", "email", "first_name", "last_name", "role", "password"]
         extra_kwargs = {
             "first_name": {"required": True},
             "last_name": {"required": True},
             "email": {"required": True},
             "password": {"write_only": True},
+            "role": {"read_only": True},  # Роль только для чтения
         }
 
     def create(self, validated_data: Dict) -> "UserType":

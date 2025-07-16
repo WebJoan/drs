@@ -56,6 +56,7 @@ export function ProductsDialogs() {
     setIsDeleteMultipleDialogOpen,
     productsToDelete,
     setProductsToDelete,
+    clearSelection,
   } = useProductsContext()
 
   const updateProductMutation = useUpdateProduct()
@@ -124,6 +125,8 @@ export function ProductsDialogs() {
         await deleteProductMutation.mutateAsync(productToDelete.id)
         setIsDeleteDialogOpen(false)
         setProductToDelete(null)
+        // Сбрасываем выбор чекбоксов после удаления
+        clearSelection?.()
       } catch (error) {
         console.error('Ошибка при удалении товара:', error)
       }
@@ -136,6 +139,8 @@ export function ProductsDialogs() {
         await deleteProductsMutation.mutateAsync(productsToDelete.map(p => p.id))
         setIsDeleteMultipleDialogOpen(false)
         setProductsToDelete([])
+        // Сбрасываем выбор чекбоксов после массового удаления
+        clearSelection?.()
       } catch (error) {
         console.error('Ошибка при удалении товаров:', error)
       }

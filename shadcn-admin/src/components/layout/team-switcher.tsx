@@ -15,18 +15,26 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar'
+import { useRole } from '@/contexts/RoleContext'
+import { UserRole } from '@/lib/types'
+
+interface Team {
+  name: string
+  logo: React.ElementType
+  plan: string
+  role: UserRole
+}
 
 export function TeamSwitcher({
   teams,
 }: {
-  teams: {
-    name: string
-    logo: React.ElementType
-    plan: string
-  }[]
+  teams: Team[]
 }) {
   const { isMobile } = useSidebar()
-  const [activeTeam, setActiveTeam] = React.useState(teams[0])
+  const { currentInterfaceRole, switchToRole, canSwitchToRole } = useRole()
+  
+  // Находим активную команду на основе текущей роли интерфейса
+  const activeTeam = teams.find(team => team.role === currentInterfaceRole) || teams[0]
 
   return (
     <SidebarMenu>
@@ -56,28 +64,28 @@ export function TeamSwitcher({
             sideOffset={4}
           >
             <DropdownMenuLabel className='text-muted-foreground text-xs'>
-              Команды
+              Интерфейсы
             </DropdownMenuLabel>
-            {teams.map((team, index) => (
-              <DropdownMenuItem
-                key={team.name}
-                onClick={() => setActiveTeam(team)}
-                className='gap-2 p-2'
-              >
-                <div className='flex size-6 items-center justify-center rounded-sm border'>
-                  <team.logo className='size-4 shrink-0' />
-                </div>
-                {team.name}
-                <DropdownMenuShortcut>⌘{index + 1}</DropdownMenuShortcut>
-              </DropdownMenuItem>
-            ))}
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className='gap-2 p-2'>
-              <div className='bg-background flex size-6 items-center justify-center rounded-md border'>
-                <Plus className='size-4' />
-              </div>
-              <div className='text-muted-foreground font-medium'>Добавить команду</div>
-            </DropdownMenuItem>
+            {teams.map((team, index) => {
+              const isActive = team.role === currentInterfaceRole
+              const canSwitch = canSwitchToRole(team.role)
+              
+              return (
+                <DropdownMenuItem
+                  key={team.role}
+                  onClick={() => canSwitch && switchToRole(team.role)}
+                  className={`gap-2 p-2 ${!canSwitch ? 'opacity-50 cursor-not-allowed' : ''} ${isActive ? 'bg-sidebar-accent' : ''}`}
+                  disabled={!canSwitch}
+                >
+                  <div className='flex size-6 items-center justify-center rounded-sm border'>
+                    <team.logo className='size-4 shrink-0' />
+                  </div>
+                  {team.name}
+                  {isActive && <span className='ml-auto text-xs'>✓</span>}
+                  <DropdownMenuShortcut>⌘{index + 1}</DropdownMenuShortcut>
+                </DropdownMenuItem>
+              )
+            })}
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>

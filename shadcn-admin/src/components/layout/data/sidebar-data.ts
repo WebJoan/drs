@@ -22,43 +22,94 @@ import {
 } from '@tabler/icons-react'
 import { AudioWaveform, Command, GalleryVerticalEnd } from 'lucide-react'
 import { type SidebarData } from '../types'
+import { UserRole } from '@/lib/types'
 
-export const sidebarData: SidebarData = {
-  user: {
-    name: 'satnaing',
-    email: 'satnaingdev@gmail.com',
-    avatar: '/avatars/shadcn.jpg',
-  },
-  teams: [
+// Доступные команды (интерфейсы) для разных ролей
+export const roleTeams = {
+  [UserRole.ADMIN]: [
+    {
+      name: 'RUELIQ Admin',
+      logo: Command,
+      plan: 'Админ панель',
+      role: UserRole.ADMIN,
+    },
+    {
+      name: 'Продажи',
+      logo: GalleryVerticalEnd,
+      plan: 'Менеджер по продажам',
+      role: UserRole.SALES_MANAGER,
+    },
+    {
+      name: 'Продукты',
+      logo: AudioWaveform,
+      plan: 'Продукт менеджер',
+      role: UserRole.PRODUCT_MANAGER,
+    },
+  ],
+  [UserRole.SALES_MANAGER]: [
+    {
+      name: 'Продажи',
+      logo: GalleryVerticalEnd,
+      plan: 'Менеджер по продажам',
+      role: UserRole.SALES_MANAGER,
+    },
+  ],
+  [UserRole.PRODUCT_MANAGER]: [
+    {
+      name: 'Продукты',
+      logo: AudioWaveform,
+      plan: 'Продукт менеджер',
+      role: UserRole.PRODUCT_MANAGER,
+    },
+  ],
+  [UserRole.USER]: [
     {
       name: 'RUELIQ',
       logo: Command,
-      plan: 'Админ панель',
-    },
-    {
-      name: 'Acme Inc',
-      logo: GalleryVerticalEnd,
-      plan: 'Sales ',
-    },
-    {
-      name: 'Acme Corp.',
-      logo: AudioWaveform,
-      plan: 'Startup',
+      plan: 'Пользователь',
+      role: UserRole.USER,
     },
   ],
-  navGroups: [
+}
+
+// Функция для получения данных сайдбара на основе роли пользователя
+export function getSidebarDataForRole(userRole: UserRole, currentInterfaceRole?: UserRole): SidebarData {
+  // Определяем какой интерфейс показывать
+  const interfaceRole = currentInterfaceRole || userRole
+  
+  // Получаем доступные команды для пользователя
+  const availableTeams = roleTeams[userRole] || []
+  
+  // Получаем навигационные группы для выбранного интерфейса
+  const navGroups = roleNavGroups[interfaceRole] || roleNavGroups[UserRole.USER]
+  
+  return {
+    user: defaultUser, // Информация о пользователе остается той же
+    teams: availableTeams,
+    navGroups: navGroups as any, // Временно используем any для обхода типизации
+  }
+}
+
+// Навигационные группы для разных ролей
+export const roleNavGroups = {
+  [UserRole.ADMIN]: [
     {
       title: 'Основные',
       items: [
+        {
+          title: 'Панель управления',
+          url: '/',
+          icon: IconLayoutDashboard,
+        },
         {
           title: 'Товары',
           url: '/goods',
           icon: IconShoppingCart,
         },
         {
-          title: 'Панель управления',
-          url: '/',
-          icon: IconLayoutDashboard,
+          title: 'Пользователи',
+          url: '/users',
+          icon: IconUsers,
         },
         {
           title: 'Задачи',
@@ -75,11 +126,6 @@ export const sidebarData: SidebarData = {
           url: '/chats',
           badge: '3',
           icon: IconMessages,
-        },
-        {
-          title: 'Пользователи',
-          url: '/users',
-          icon: IconUsers,
         },
       ],
     },
@@ -187,4 +233,184 @@ export const sidebarData: SidebarData = {
       ],
     },
   ],
+  [UserRole.SALES_MANAGER]: [
+    {
+      title: 'Продажи',
+      items: [
+        {
+          title: 'Панель продаж',
+          url: '/',
+          icon: IconLayoutDashboard,
+        },
+        {
+          title: 'Каталог товаров',
+          url: '/goods',
+          icon: IconShoppingCart,
+        },
+        {
+          title: 'Клиенты',
+          url: '/users',
+          icon: IconUsers,
+        },
+        {
+          title: 'Чаты',
+          url: '/chats',
+          badge: '3',
+          icon: IconMessages,
+        },
+      ],
+    },
+    {
+      title: 'Другое',
+      items: [
+        {
+          title: 'Настройки',
+          icon: IconSettings,
+          items: [
+            {
+              title: 'Профиль',
+              url: '/settings',
+              icon: IconUserCog,
+            },
+            {
+              title: 'Аккаунт',
+              url: '/settings/account',
+              icon: IconTool,
+            },
+            {
+              title: 'Внешний вид',
+              url: '/settings/appearance',
+              icon: IconPalette,
+            },
+          ],
+        },
+        {
+          title: 'Справочный центр',
+          url: '/help-center',
+          icon: IconHelp,
+        },
+      ],
+    },
+  ],
+  [UserRole.PRODUCT_MANAGER]: [
+    {
+      title: 'Продукты',
+      items: [
+        {
+          title: 'Панель продуктов',
+          url: '/',
+          icon: IconLayoutDashboard,
+        },
+        {
+          title: 'Управление товарами',
+          url: '/goods',
+          icon: IconShoppingCart,
+        },
+        {
+          title: 'Задачи',
+          url: '/tasks',
+          icon: IconChecklist,
+        },
+        {
+          title: 'Чаты',
+          url: '/chats',
+          badge: '3',
+          icon: IconMessages,
+        },
+      ],
+    },
+    {
+      title: 'Другое',
+      items: [
+        {
+          title: 'Настройки',
+          icon: IconSettings,
+          items: [
+            {
+              title: 'Профиль',
+              url: '/settings',
+              icon: IconUserCog,
+            },
+            {
+              title: 'Аккаунт',
+              url: '/settings/account',
+              icon: IconTool,
+            },
+            {
+              title: 'Внешний вид',
+              url: '/settings/appearance',
+              icon: IconPalette,
+            },
+          ],
+        },
+        {
+          title: 'Справочный центр',
+          url: '/help-center',
+          icon: IconHelp,
+        },
+      ],
+    },
+  ],
+  [UserRole.USER]: [
+    {
+      title: 'Основные',
+      items: [
+        {
+          title: 'Панель пользователя',
+          url: '/',
+          icon: IconLayoutDashboard,
+        },
+        {
+          title: 'Каталог товаров',
+          url: '/goods',
+          icon: IconShoppingCart,
+        },
+      ],
+    },
+    {
+      title: 'Другое',
+      items: [
+        {
+          title: 'Настройки',
+          icon: IconSettings,
+          items: [
+            {
+              title: 'Профиль',
+              url: '/settings',
+              icon: IconUserCog,
+            },
+            {
+              title: 'Аккаунт',
+              url: '/settings/account',
+              icon: IconTool,
+            },
+            {
+              title: 'Внешний вид',
+              url: '/settings/appearance',
+              icon: IconPalette,
+            },
+          ],
+        },
+        {
+          title: 'Справочный центр',
+          url: '/help-center',
+          icon: IconHelp,
+        },
+      ],
+    },
+  ],
+}
+
+// Базовые данные пользователя
+const defaultUser = {
+  name: 'satnaing',
+  email: 'satnaingdev@gmail.com',
+  avatar: '/avatars/shadcn.jpg',
+}
+
+// Основной объект данных сайдбара (для обратной совместимости)
+export const sidebarData: SidebarData = {
+  user: defaultUser,
+  teams: roleTeams[UserRole.ADMIN], // По умолчанию админский интерфейс
+  navGroups: roleNavGroups[UserRole.ADMIN], // По умолчанию админские группы
 }

@@ -1,4 +1,5 @@
 import { LinkProps } from '@tanstack/react-router'
+import { UserRole } from '@/lib/types'
 
 interface User {
   name: string
@@ -10,6 +11,7 @@ interface Team {
   name: string
   logo: React.ElementType
   plan: string
+  role: UserRole
 }
 
 interface BaseNavItem {

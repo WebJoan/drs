@@ -17,13 +17,53 @@ import type {
 } from '@/lib/types'
 import { toast } from 'sonner'
 
-// Получение списка товаров
-export const useProducts = () => {
+// Интерфейс для пагинированного ответа товаров
+interface PaginatedProductsResponse {
+  count: number
+  next: string | null
+  previous: string | null
+  page: number
+  page_size: number
+  total_pages: number
+  results: Product[]
+}
+
+// Получение списка товаров с пагинацией
+export const useProducts = (page: number = 1, pageSize: number = 50, search?: string) => {
   return useQuery({
-    queryKey: ['products'],
-    queryFn: async (): Promise<Product[]> => {
+    queryKey: ['products', page, pageSize, search],
+    queryFn: async (): Promise<PaginatedProductsResponse> => {
       try {
-        const response = await apiClient.get<Product[]>('/goods/products/')
+        // Если есть поиск, используем MeiliSearch
+        if (search && search.trim()) {
+          const params = new URLSearchParams()
+          params.append('q', search.trim())
+          params.append('limit', pageSize.toString())
+          params.append('offset', ((page - 1) * pageSize).toString())
+          
+          const response = await apiClient.get(`/goods/products/search/?${params.toString()}`)
+          const searchData = response.data
+          
+          // Преобразуем результаты MeiliSearch в формат пагинации
+          return {
+            count: searchData.total,
+            next: searchData.total > page * pageSize ? 'next' : null,
+            previous: page > 1 ? 'previous' : null,
+            page,
+            page_size: pageSize,
+            total_pages: Math.ceil(searchData.total / pageSize),
+            results: searchData.results
+          }
+        }
+        
+        // Обычный запрос без поиска
+        const params = new URLSearchParams()
+        params.append('page', page.toString())
+        params.append('page_size', pageSize.toString())
+        
+        const response = await apiClient.get<PaginatedProductsResponse>(
+          `/goods/products/?${params.toString()}`
+        )
         return response.data
       } catch (error: any) {
         console.error('Ошибка получения товаров:', error)
@@ -34,70 +74,13 @@ export const useProducts = () => {
       }
     },
     retry: 2,
-    staleTime: 5 * 60 * 1000, // 5 минут
-    gcTime: 10 * 60 * 1000, // 10 минут
+    staleTime: 2 * 60 * 1000, // 2 минуты для пагинированных данных
+    gcTime: 5 * 60 * 1000,
+    placeholderData: (previousData) => previousData, // Сохраняем предыдущие данные при загрузке новых
   })
 }
 
-// Поиск товаров через MeiliSearch
-export const useProductsSearch = (searchParams: {
-  query?: string
-  brandId?: number
-  subgroupId?: number
-  managerId?: number
-  groupId?: number
-  limit?: number
-  offset?: number
-}) => {
-  return useQuery({
-    queryKey: ['products-search', searchParams],
-    queryFn: async (): Promise<{
-      results: any[]
-      total: number
-      query: string
-      processing_time: number
-    }> => {
-      try {
-        const params = new URLSearchParams()
-        
-        if (searchParams.query) {
-          params.append('q', searchParams.query)
-        }
-        if (searchParams.brandId) {
-          params.append('brand_id', searchParams.brandId.toString())
-        }
-        if (searchParams.subgroupId) {
-          params.append('subgroup_id', searchParams.subgroupId.toString())
-        }
-        if (searchParams.managerId) {
-          params.append('manager_id', searchParams.managerId.toString())
-        }
-        if (searchParams.groupId) {
-          params.append('group_id', searchParams.groupId.toString())
-        }
-        if (searchParams.limit) {
-          params.append('limit', searchParams.limit.toString())
-        }
-        if (searchParams.offset) {
-          params.append('offset', searchParams.offset.toString())
-        }
-        
-        const response = await apiClient.get(`/goods/products/search/?${params.toString()}`)
-        return response.data
-      } catch (error: any) {
-        console.error('Ошибка поиска товаров:', error)
-        if (error.response?.data?.detail) {
-          throw new Error(error.response.data.detail)
-        }
-        throw new Error('Не удалось выполнить поиск товаров')
-      }
-    },
-    enabled: !!searchParams.query && searchParams.query.length > 0,
-    retry: 2,
-    staleTime: 1 * 60 * 1000, // 1 минута для поиска
-    gcTime: 5 * 60 * 1000,
-  })
-}
+
 
 // Получение конкретного товара
 export const useProduct = (productId: number) => {

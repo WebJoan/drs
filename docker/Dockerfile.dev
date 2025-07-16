@@ -12,6 +12,8 @@ RUN apt-get update \
     libpq-dev \
     supervisor \
     nano \
+    openssh-client \
+    procps \
     gdal-bin \
     && rm -rf /var/lib/apt/lists/*
 

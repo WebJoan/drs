@@ -16,6 +16,8 @@ interface ProductsContextType {
   setIsDeleteMultipleDialogOpen: (open: boolean) => void
   productsToDelete: Product[]
   setProductsToDelete: (products: Product[]) => void
+  clearSelection: (() => void) | null
+  setClearSelection: (clearFn: (() => void) | null) => void
 }
 
 const ProductsContext = createContext<ProductsContextType | undefined>(undefined)
@@ -40,6 +42,7 @@ export default function ProductsProvider({ children }: ProductsProviderProps) {
   const [productToDelete, setProductToDelete] = useState<Product | null>(null)
   const [isDeleteMultipleDialogOpen, setIsDeleteMultipleDialogOpen] = useState(false)
   const [productsToDelete, setProductsToDelete] = useState<Product[]>([])
+  const [clearSelection, setClearSelection] = useState<(() => void) | null>(null)
 
   useEffect(() => {
     const handleEditProduct = (event: CustomEvent) => {
@@ -78,6 +81,8 @@ export default function ProductsProvider({ children }: ProductsProviderProps) {
     setIsDeleteMultipleDialogOpen,
     productsToDelete,
     setProductsToDelete,
+    clearSelection,
+    setClearSelection,
   }
 
   return (

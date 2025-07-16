@@ -23,7 +23,7 @@ mysql_config = {
 }
 
 
-@shared_task
+@shared_task(queue=settings.RABBITMQ_GOODS_QUEUE)
 def update_products_from_mysql():
     """
     Celery-задача для обновления товаров и связанных данных в локальной базе из удалённой MySQL.

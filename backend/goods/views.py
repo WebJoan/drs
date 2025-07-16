@@ -1,12 +1,14 @@
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.pagination import PageNumberPagination
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.conf import settings
 from meilisearch import Client
 from .utils import prepare_search_query
 from .models import Product, Brand, ProductSubgroup, ProductGroup
+from .permissions import ProductPermission, BrandPermission, ProductGroupPermission
 from .serializers import (
     ProductSerializer, 
     ProductCreateSerializer, 
@@ -17,9 +19,28 @@ from .serializers import (
 )
 
 
+class ProductPageNumberPagination(PageNumberPagination):
+    page_size = 50  # 50 товаров на страницу для оптимальной производительности
+    page_size_query_param = 'page_size'
+    max_page_size = 200  # Максимум 200 товаров на страницу
+    
+    def get_paginated_response(self, data):
+        return Response({
+            'count': self.page.paginator.count,
+            'next': self.get_next_link(),
+            'previous': self.get_previous_link(),
+            'page': self.page.number,
+            'page_size': self.page_size,
+            'total_pages': self.page.paginator.num_pages,
+            'results': data
+        })
+
+
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.select_related('subgroup', 'brand', 'product_manager').all()
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [ProductPermission]
+    pagination_class = ProductPageNumberPagination
+    ordering = ['-id']  # Стабильная сортировка (сначала новые товары по ID)
     
     def get_serializer_class(self):
         if self.action == 'create':
@@ -59,7 +80,7 @@ class ProductViewSet(viewsets.ModelViewSet):
                 Q(subgroup__product_manager_id=manager_id)
             )
         
-        return queryset.distinct()
+        return queryset.distinct().order_by(*self.ordering)
     
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -101,18 +122,18 @@ class ProductViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'])
     def search(self, request):
-        """Поиск товаров через MeiliSearch с поддержкой транслитерации"""
+        """Поиск товаров через MeiliSearch с приоритизированной транслитерацией"""
         query = request.query_params.get('q', '')
         
         if not query:
-            return Response({'results': []})
+            return Response({'results': [], 'total': 0, 'query': query})
         
         try:
             # Подключаемся к MeiliSearch
             client = Client(settings.MEILISEARCH_HOST, settings.MEILISEARCH_API_KEY)
             
-            # Подготавливаем запрос с вариантами транслитерации
-            search_variants = prepare_search_query(query)
+            # Подготавливаем запрос с приоритизированными вариантами транслитерации
+            search_data = prepare_search_query(query)
             
             # Строим фильтры для поиска
             filters = []
@@ -141,48 +162,87 @@ class ProductViewSet(viewsets.ModelViewSet):
             filter_str = ' AND '.join(filters) if filters else None
             
             # Параметры поиска
-            search_params = {
-                'limit': int(request.query_params.get('limit', 50)),
-                'offset': int(request.query_params.get('offset', 0)),
+            limit = int(request.query_params.get('limit', 50))
+            offset = int(request.query_params.get('offset', 0))
+            
+            base_search_params = {
+                'limit': limit * 2,  # Увеличиваем лимит для фильтрации дубликатов
+                'offset': 0,  # Начинаем с начала для каждого запроса
                 'attributesToHighlight': ['name', 'brand_name', 'subgroup_name'],
                 'highlightPreTag': '<mark>',
                 'highlightPostTag': '</mark>',
             }
             
             if filter_str:
-                search_params['filter'] = filter_str
+                base_search_params['filter'] = filter_str
             
-            # Выполняем поиск по всем вариантам транслитерации
+            # Выполняем приоритизированный поиск
             all_results = []
             seen_ids = set()
             
-            for search_variant in search_variants:
-                if search_variant.strip():  # Пропускаем пустые варианты
+            # Этап 1: Поиск по приоритетным вариантам (оригинал + семантическая транслитерация)
+            priority_results = []
+            for search_variant in search_data['priority_variants']:
+                if search_variant.strip():
                     try:
-                        variant_results = client.index('products').search(search_variant, search_params)
+                        variant_results = client.index('products').search(search_variant, base_search_params)
                         
-                        # Добавляем только уникальные результаты
                         for hit in variant_results['hits']:
                             if hit['id'] not in seen_ids:
-                                all_results.append(hit)
+                                # Отмечаем как приоритетный результат
+                                hit['_search_priority'] = 'high'
+                                hit['_search_variant'] = search_variant
+                                priority_results.append(hit)
                                 seen_ids.add(hit['id'])
                     except Exception as variant_error:
-                        # Логируем ошибку для конкретного варианта, но продолжаем
-                        print(f"Ошибка поиска для варианта '{search_variant}': {variant_error}")
+                        print(f"Ошибка поиска для приоритетного варианта '{search_variant}': {variant_error}")
                         continue
             
-            # Сортируем результаты по релевантности (MeiliSearch уже сортирует)
-            # Ограничиваем количество результатов
-            limit = int(request.query_params.get('limit', 50))
-            offset = int(request.query_params.get('offset', 0))
+            # Если приоритетных результатов достаточно, используем только их
+            if len(priority_results) >= limit:
+                all_results = priority_results
+            else:
+                # Этап 2: Дополняем запасными вариантами (раскладка клавиатуры)
+                all_results = priority_results.copy()
+                
+                for search_variant in search_data['fallback_variants']:
+                    if search_variant.strip() and len(all_results) < limit * 2:
+                        try:
+                            variant_results = client.index('products').search(search_variant, base_search_params)
+                            
+                            for hit in variant_results['hits']:
+                                if hit['id'] not in seen_ids:
+                                    # Отмечаем как запасной результат
+                                    hit['_search_priority'] = 'low'
+                                    hit['_search_variant'] = search_variant
+                                    all_results.append(hit)
+                                    seen_ids.add(hit['id'])
+                        except Exception as variant_error:
+                            print(f"Ошибка поиска для запасного варианта '{search_variant}': {variant_error}")
+                            continue
             
-            paginated_results = all_results[offset:offset + limit]
+            # Сортируем результаты: сначала приоритетные, потом запасные
+            # В пределах группы сохраняем сортировку MeiliSearch по релевантности
+            priority_results = [r for r in all_results if r.get('_search_priority') == 'high']
+            fallback_results = [r for r in all_results if r.get('_search_priority') == 'low']
+            
+            final_results = priority_results + fallback_results
+            
+            # Применяем пагинацию
+            paginated_results = final_results[offset:offset + limit]
+            
+            # Убираем служебные поля перед отправкой
+            for result in paginated_results:
+                result.pop('_search_priority', None)
+                result.pop('_search_variant', None)
             
             return Response({
                 'results': paginated_results,
-                'total': len(all_results),
+                'total': len(final_results),
                 'query': query,
-                'search_variants': search_variants,  # Для отладки
+                'search_variants': search_data['all_variants'],  # Для отладки
+                'priority_count': len(priority_results),  # Для отладки
+                'fallback_count': len(fallback_results),  # Для отладки
                 'processing_time': 0  # Приблизительное время
             })
             
@@ -196,7 +256,8 @@ class ProductViewSet(viewsets.ModelViewSet):
 class BrandViewSet(viewsets.ModelViewSet):
     queryset = Brand.objects.select_related('product_manager').all()
     serializer_class = BrandSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [BrandPermission]
+    pagination_class = None  # Отключаем пагинацию для брендов
     
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -212,7 +273,8 @@ class BrandViewSet(viewsets.ModelViewSet):
 class ProductSubgroupViewSet(viewsets.ModelViewSet):
     queryset = ProductSubgroup.objects.select_related('group', 'product_manager').all()
     serializer_class = ProductSubgroupSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [ProductGroupPermission]
+    pagination_class = None  # Отключаем пагинацию для подгрупп
     
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -236,7 +298,8 @@ class ProductSubgroupViewSet(viewsets.ModelViewSet):
 class ProductGroupViewSet(viewsets.ModelViewSet):
     queryset = ProductGroup.objects.all()
     serializer_class = ProductGroupSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [ProductGroupPermission]
+    pagination_class = None  # Отключаем пагинацию для групп
     
     def get_queryset(self):
         queryset = super().get_queryset()
