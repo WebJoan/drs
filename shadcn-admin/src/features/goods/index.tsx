@@ -4,7 +4,12 @@ import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { Button } from '@/components/ui/button'
-import { Loader2, RefreshCw, AlertCircle, Package } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Switch } from '@/components/ui/switch'
+import { Slider } from '@/components/ui/slider'
+import { Label } from '@/components/ui/label'
+import { Card, CardContent } from '@/components/ui/card'
+import { Loader2, RefreshCw, AlertCircle, Package, Search as SearchIcon, Bot, Type } from 'lucide-react'
 import { useProducts } from '@/hooks/useProducts'
 import { columns } from './components/products-columns'
 import { ProductsDialogs } from './components/products-dialogs'
@@ -20,6 +25,10 @@ export default function Products() {
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [showSearchLoader, setShowSearchLoader] = useState(false)
+  
+  // Состояние для hybrid search
+  const [useHybridSearch, setUseHybridSearch] = useState(false)
+  const [semanticRatio, setSemanticRatio] = useState([0.8])
 
   // Дебаунс для поиска
   useEffect(() => {
@@ -30,7 +39,12 @@ export default function Products() {
     return () => clearTimeout(timer)
   }, [search])
   
-  const { data: productsResponse, isLoading, error, refetch, isRefetching } = useProducts(page, pageSize, debouncedSearch)
+  const { data: productsResponse, isLoading, error, refetch, isRefetching } = useProducts(
+    page, 
+    pageSize, 
+    debouncedSearch, 
+    debouncedSearch ? { useHybridSearch, semanticRatio: semanticRatio[0] } : undefined
+  )
 
   // Управление индикатором загрузки поиска
   useEffect(() => {
@@ -127,7 +141,80 @@ export default function Products() {
         </div>
 
         <div className='space-y-4'>
-          
+          {/* Поисковая строка с hybrid search controls */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <div className="relative flex-1 max-w-sm">
+                {showSearchLoader ? (
+                  <Loader2 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 animate-spin" />
+                ) : (
+                  <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                )}
+                <Input
+                  placeholder="Поиск товаров..."
+                  value={search}
+                  onChange={(event) => {
+                    setSearch(event.target.value)
+                    setPage(1) // Сброс на первую страницу при поиске
+                  }}
+                  className="pl-10"
+                />
+              </div>
+              
+              {/* Переключатель гибридного поиска */}
+              {search && (
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="hybrid-search"
+                    checked={useHybridSearch}
+                    onCheckedChange={setUseHybridSearch}
+                  />
+                  <Label htmlFor="hybrid-search" className="text-sm font-medium">
+                    <div className="flex items-center gap-1">
+                      <Bot className="w-4 h-4" />
+                      Умный поиск
+                    </div>
+                  </Label>
+                </div>
+              )}
+            </div>
+            
+            {/* Настройки семантического поиска */}
+            {search && useHybridSearch && (
+              <Card className="p-4 bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
+                <CardContent className="p-0">
+                  <div className="space-y-3">
+                    <Label className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                      Баланс поиска
+                    </Label>
+                    <div className="space-y-2">
+                      <Slider
+                        value={semanticRatio}
+                        onValueChange={setSemanticRatio}
+                        min={0}
+                        max={1}
+                        step={0.1}
+                        className="w-full"
+                      />
+                      <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400">
+                        <div className="flex items-center gap-1">
+                          <Type className="w-3 h-3" />
+                          <span>Точные слова</span>
+                        </div>
+                        <span className="font-medium">
+                          {Math.round(semanticRatio[0] * 100)}% семантика
+                        </span>
+                        <div className="flex items-center gap-1">
+                          <Bot className="w-3 h-3" />
+                          <span>Смысл фразы</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
 
           {productsResponse?.results && productsResponse.results.length > 0 ? (
             <ProductsTable 
@@ -146,19 +233,19 @@ export default function Products() {
                   setPage(1) // Сброс на первую страницу при изменении размера
                 }
               }}
-              searchValue={search}
-              onSearchChange={(value) => {
-                setSearch(value)
-                setPage(1) // Сброс на первую страницу при поиске
-              }}
-              isSearching={showSearchLoader}
+              hideSearch={true} // Скрываем поисковую строку в таблице
             />
           ) : (
             <div className='flex flex-col items-center justify-center py-12 text-center'>
               <Package className='h-12 w-12 text-muted-foreground mb-4' />
-              <h3 className='text-lg font-semibold mb-2'>Нет товаров</h3>
+              <h3 className='text-lg font-semibold mb-2'>
+                {search ? 'Товары не найдены' : 'Нет товаров'}
+              </h3>
               <p className='text-muted-foreground mb-4 max-w-sm'>
-                Товары не найдены. Создайте первый товар, чтобы начать работу.
+                {search 
+                  ? `По запросу "${search}" товары не найдены. Попробуйте изменить поисковый запрос.`
+                  : 'Товары не найдены. Создайте первый товар, чтобы начать работу.'
+                }
               </p>
               <ProductsPrimaryButtons />
             </div>

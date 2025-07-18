@@ -28,10 +28,21 @@ interface PaginatedProductsResponse {
   results: Product[]
 }
 
+// Интерфейс для опций поиска
+interface SearchOptions {
+  useHybridSearch?: boolean
+  semanticRatio?: number
+}
+
 // Получение списка товаров с пагинацией
-export const useProducts = (page: number = 1, pageSize: number = 50, search?: string) => {
+export const useProducts = (
+  page: number = 1, 
+  pageSize: number = 50, 
+  search?: string, 
+  searchOptions?: SearchOptions
+) => {
   return useQuery({
-    queryKey: ['products', page, pageSize, search],
+    queryKey: ['products', page, pageSize, search, searchOptions],
     queryFn: async (): Promise<PaginatedProductsResponse> => {
       try {
         // Если есть поиск, используем MeiliSearch
@@ -41,7 +52,18 @@ export const useProducts = (page: number = 1, pageSize: number = 50, search?: st
           params.append('limit', pageSize.toString())
           params.append('offset', ((page - 1) * pageSize).toString())
           
-          const response = await apiClient.get(`/goods/products/search/?${params.toString()}`)
+          // Если включен hybrid search, добавляем параметры
+          if (searchOptions?.useHybridSearch) {
+            const semanticRatio = searchOptions.semanticRatio ?? 0.8
+            params.append('semantic_ratio', semanticRatio.toString())
+          }
+          
+          // Выбираем endpoint в зависимости от типа поиска
+          const endpoint = searchOptions?.useHybridSearch 
+            ? '/goods/products/hybrid_search/' 
+            : '/goods/products/search/'
+          
+          const response = await apiClient.get(`${endpoint}?${params.toString()}`)
           const searchData = response.data
           
           // Преобразуем результаты MeiliSearch в формат пагинации

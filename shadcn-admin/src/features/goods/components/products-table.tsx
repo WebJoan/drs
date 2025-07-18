@@ -45,9 +45,10 @@ interface ProductsTableProps {
   onSearchChange?: (search: string) => void
   searchValue?: string
   isSearching?: boolean
+  hideSearch?: boolean
 }
 
-export function ProductsTable({ columns, data, pagination, onSearchChange, searchValue, isSearching }: ProductsTableProps) {
+export function ProductsTable({ columns, data, pagination, onSearchChange, searchValue, isSearching, hideSearch }: ProductsTableProps) {
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
@@ -96,19 +97,21 @@ export function ProductsTable({ columns, data, pagination, onSearchChange, searc
   return (
     <div className="w-full">
       <div className="flex items-center py-4">
-        <div className="relative flex-1 max-w-sm">
-          {isSearching ? (
-            <Loader2 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 animate-spin" />
-          ) : (
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-          )}
-          <Input
-            placeholder="Поиск товаров..."
-            value={searchValue ?? ''}
-            onChange={(event) => onSearchChange?.(event.target.value)}
-            className="pl-10"
-          />
-        </div>
+        {!hideSearch && (
+          <div className="relative flex-1 max-w-sm">
+            {isSearching ? (
+              <Loader2 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 animate-spin" />
+            ) : (
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            )}
+            <Input
+              placeholder="Поиск товаров..."
+              value={searchValue ?? ''}
+              onChange={(event) => onSearchChange?.(event.target.value)}
+              className="pl-10"
+            />
+          </div>
+        )}
         <div className="flex items-center space-x-2 ml-auto">
           {table.getFilteredSelectedRowModel().rows.length > 0 && (
             <Button
