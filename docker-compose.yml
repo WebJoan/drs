@@ -11,12 +11,14 @@ services:
       - postgres
       - rabbitmq
       - meilisearch
+    user: "0:0"  # Run as root
     networks:
       - django_react_starter_network
     ports:
       - "8000:8000"
     volumes:
       - ./backend:/home/app/backend
+      - ./logs:/home/app/logs
     profiles:
       - all
 

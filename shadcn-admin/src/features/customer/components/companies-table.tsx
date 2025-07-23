@@ -10,9 +10,14 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import {
   Table,
   TableBody,
@@ -21,14 +26,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { Badge } from '@/components/ui/badge'
-import { ChevronDown, Building2, Users, Phone, Mail } from 'lucide-react'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Building2, Users, Phone, Mail, ChevronDown } from 'lucide-react'
 import type { Company } from '../types'
 
 interface CompaniesTableProps {
@@ -38,15 +38,34 @@ interface CompaniesTableProps {
 
 export const columns: ColumnDef<Company>[] = [
   {
+    id: 'select',
+    header: ({ table }) => (
+      <Checkbox
+        checked={table.getIsAllPageRowsSelected()}
+        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+        aria-label="Выбрать все"
+      />
+    ),
+    cell: ({ row }) => (
+      <Checkbox
+        checked={row.getIsSelected()}
+        onCheckedChange={(value) => row.toggleSelected(!!value)}
+        aria-label="Выбрать строку"
+      />
+    ),
+    enableSorting: false,
+    enableHiding: false,
+  },
+  {
     accessorKey: 'name',
     header: 'Название компании',
     cell: ({ row }) => (
-      <div className="flex items-center gap-2">
-        <Building2 className="h-4 w-4 text-muted-foreground" />
-        <div>
-          <div className="font-medium">{row.getValue('name')}</div>
+      <div className="flex items-start gap-3 min-w-[200px]">
+        <Building2 className="h-4 w-4 text-muted-foreground mt-1 flex-shrink-0" />
+        <div className="min-w-0 flex-1">
+          <div className="font-medium text-sm leading-5 truncate">{row.getValue('name')}</div>
           {row.original.short_name && (
-            <div className="text-sm text-muted-foreground">
+            <div className="text-xs text-muted-foreground truncate mt-1">
               {row.original.short_name}
             </div>
           )}
@@ -67,7 +86,7 @@ export const columns: ColumnDef<Company>[] = [
         other: 'Другое'
       }
       return (
-        <Badge variant="outline">
+        <Badge variant="outline" className="text-xs whitespace-nowrap">
           {typeLabels[type as keyof typeof typeLabels] || type}
         </Badge>
       )
@@ -91,7 +110,7 @@ export const columns: ColumnDef<Company>[] = [
         blacklist: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
       }
       return (
-        <Badge className={statusColors[status as keyof typeof statusColors]}>
+        <Badge className={`${statusColors[status as keyof typeof statusColors]} text-xs whitespace-nowrap`}>
           {statusLabels[status as keyof typeof statusLabels] || status}
         </Badge>
       )
@@ -103,9 +122,9 @@ export const columns: ColumnDef<Company>[] = [
     cell: ({ row }) => {
       const industry = row.getValue('industry') as string
       return industry ? (
-        <span className="text-sm">{industry}</span>
+        <span className="text-sm max-w-[120px] truncate block">{industry}</span>
       ) : (
-        <span className="text-sm text-muted-foreground">-</span>
+        <span className="text-sm text-muted-foreground">—</span>
       )
     },
   },
@@ -115,7 +134,7 @@ export const columns: ColumnDef<Company>[] = [
     cell: ({ row }) => {
       const manager = row.getValue('sales_manager_name') as string
       return manager ? (
-        <span className="text-sm">{manager}</span>
+        <span className="text-sm max-w-[120px] truncate block">{manager}</span>
       ) : (
         <span className="text-sm text-muted-foreground">Не назначен</span>
       )
@@ -123,37 +142,43 @@ export const columns: ColumnDef<Company>[] = [
   },
   {
     accessorKey: 'employees_count_actual',
-    header: 'Контакты',
+    header: 'Сотрудники',
     cell: ({ row }) => (
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-2">
         <Users className="h-4 w-4 text-muted-foreground" />
-        <span className="text-sm">{row.getValue('employees_count_actual') || 0}</span>
+        <span className="text-sm font-medium">{row.getValue('employees_count_actual') || 0}</span>
       </div>
     ),
   },
   {
-    accessorKey: 'phone',
+    accessorKey: 'contacts',
     header: 'Контакты',
     cell: ({ row }) => (
-      <div className="space-y-1">
+      <div className="space-y-1 min-w-[180px] max-w-[200px]">
         {row.original.phone && (
-          <div className="flex items-center gap-1">
-            <Phone className="h-3 w-3 text-muted-foreground" />
-            <span className="text-xs">{row.original.phone}</span>
+          <div className="flex items-center gap-2">
+            <Phone className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+            <span className="text-xs truncate">{row.original.phone}</span>
           </div>
         )}
         {row.original.email && (
-          <div className="flex items-center gap-1">
-            <Mail className="h-3 w-3 text-muted-foreground" />
-            <span className="text-xs">{row.original.email}</span>
+          <div className="flex items-center gap-2">
+            <Mail className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+            <span className="text-xs truncate" title={row.original.email}>{row.original.email}</span>
           </div>
+        )}
+        {!row.original.phone && !row.original.email && (
+          <span className="text-xs text-muted-foreground">Нет данных</span>
         )}
       </div>
     ),
   },
 ]
 
-export function CompaniesTable({ companies, isLoading }: CompaniesTableProps) {
+export function CompaniesTable({ 
+  companies, 
+  isLoading
+}: CompaniesTableProps) {
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
@@ -178,52 +203,70 @@ export function CompaniesTable({ companies, isLoading }: CompaniesTableProps) {
     },
   })
 
+  // Функция для получения читаемых названий колонок
+  const getColumnDisplayName = (columnId: string): string => {
+    const columnNames: Record<string, string> = {
+      select: 'Выбор',
+      name: 'Название',
+      company_type: 'Тип компании',
+      status: 'Статус',
+      industry: 'Отрасль',
+      sales_manager_name: 'Менеджер',
+      employees_count_actual: 'Сотрудники',
+      contacts: 'Контакты',
+    }
+    
+    return columnNames[columnId] || columnId
+  }
+
   return (
     <div className="w-full">
       <div className="flex items-center py-4">
-        <Input
-          placeholder="Поиск компаний..."
-          value={(table.getColumn('name')?.getFilterValue() as string) ?? ''}
-          onChange={(event) =>
-            table.getColumn('name')?.setFilterValue(event.target.value)
-          }
-          className="max-w-sm"
-        />
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-auto">
-              Колонки <ChevronDown className="ml-2 h-4 w-4" />
+        <div className="flex items-center space-x-2 ml-auto">
+          {table.getFilteredSelectedRowModel().rows.length > 0 && (
+            <Button
+              variant="destructive"
+              size="sm"
+              className="h-8"
+            >
+              Удалить выбранные ({table.getFilteredSelectedRowModel().rows.length})
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {table
-              .getAllColumns()
-              .filter((column) => column.getCanHide())
-              .map((column) => {
-                return (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    className="capitalize"
-                    checked={column.getIsVisible()}
-                    onCheckedChange={(value) =>
-                      column.toggleVisibility(!!value)
-                    }
-                  >
-                    {column.id}
-                  </DropdownMenuCheckboxItem>
-                )
-              })}
-          </DropdownMenuContent>
-        </DropdownMenu>
+          )}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="h-8">
+                Колонки <ChevronDown className="ml-2 h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {table
+                .getAllColumns()
+                .filter((column) => column.getCanHide())
+                .map((column) => {
+                  const columnName = getColumnDisplayName(column.id)
+                  return (
+                    <DropdownMenuCheckboxItem
+                      key={column.id}
+                      className="capitalize"
+                      checked={column.getIsVisible()}
+                      onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                    >
+                      {columnName}
+                    </DropdownMenuCheckboxItem>
+                  )
+                })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
-      <div className="rounded-md border">
+      <div className="rounded-md border overflow-x-auto">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
                   return (
-                    <TableHead key={header.id}>
+                    <TableHead key={header.id} className="whitespace-nowrap">
                       {header.isPlaceholder
                         ? null
                         : flexRender(
@@ -244,7 +287,7 @@ export function CompaniesTable({ companies, isLoading }: CompaniesTableProps) {
                   data-state={row.getIsSelected() && 'selected'}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    <TableCell key={cell.id} className="whitespace-nowrap">
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()
@@ -266,12 +309,12 @@ export function CompaniesTable({ companies, isLoading }: CompaniesTableProps) {
           </TableBody>
         </Table>
       </div>
-      <div className="flex items-center justify-end space-x-2 py-4">
-        <div className="flex-1 text-sm text-muted-foreground">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-2 sm:space-y-0 sm:space-x-2 py-4">
+        <div className="text-sm text-muted-foreground order-2 sm:order-1">
           {table.getFilteredSelectedRowModel().rows.length} из{' '}
           {table.getFilteredRowModel().rows.length} строк выбрано.
         </div>
-        <div className="space-x-2">
+        <div className="flex space-x-2 order-1 sm:order-2">
           <Button
             variant="outline"
             size="sm"

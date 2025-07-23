@@ -22,11 +22,14 @@ RUN mkdir -p /home/app/backend && mkdir -p /home/app/logs
 RUN addgroup --system app && adduser --system --group app
 WORKDIR /home/app
 
-# Install dependencies with UV
+# Install UV first (separate layer for better caching)
+RUN pip install --upgrade pip && pip install uv
+
+# Copy only dependency files first for better layer caching
 COPY ./backend/pyproject.toml ./backend/uv.lock ./
-RUN pip install --upgrade pip \
-    && pip install uv \
-    && uv sync --frozen \
+
+# Install dependencies with UV (this layer will be cached unless dependencies change)
+RUN uv sync --frozen \
     && rm -rf uv.lock pyproject.toml
 
 # Copy backend and change ownership

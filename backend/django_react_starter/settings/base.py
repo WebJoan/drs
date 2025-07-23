@@ -37,6 +37,9 @@ INSTALLED_APPS = [
     "health",
     "user",
     "goods",
+    "customer",
+    "person", 
+    "rfq",
 ]
 
 MIDDLEWARE = [

@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import apiClient from '@/lib/api-client'
 import type { CompaniesResponse, Company, CompanyCreateData, CompanyUpdateData } from '@/features/customer/types'
 
 interface UseCompaniesParams {
@@ -23,11 +24,8 @@ export function useCompanies(params: UseCompaniesParams = {}) {
       if (params.company_type) searchParams.append('company_type', params.company_type)
       if (params.sales_manager) searchParams.append('sales_manager', params.sales_manager.toString())
 
-      const response = await fetch(`/api/v1/customer/companies/?${searchParams}`)
-      if (!response.ok) {
-        throw new Error('Failed to fetch companies')
-      }
-      return response.json()
+      const response = await apiClient.get<CompaniesResponse>(`/customer/companies/?${searchParams}`)
+      return response.data
     },
   })
 }
@@ -36,11 +34,8 @@ export function useCompany(id: number) {
   return useQuery({
     queryKey: ['company', id],
     queryFn: async (): Promise<Company> => {
-      const response = await fetch(`/api/v1/customer/companies/${id}/`)
-      if (!response.ok) {
-        throw new Error('Failed to fetch company')
-      }
-      return response.json()
+      const response = await apiClient.get<Company>(`/customer/companies/${id}/`)
+      return response.data
     },
     enabled: !!id,
   })
@@ -51,19 +46,8 @@ export function useCreateCompany() {
   
   return useMutation({
     mutationFn: async (data: CompanyCreateData): Promise<Company> => {
-      const response = await fetch('/api/v1/customer/companies/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      })
-      
-      if (!response.ok) {
-        throw new Error('Failed to create company')
-      }
-      
-      return response.json()
+      const response = await apiClient.post<Company>('/customer/companies/', data)
+      return response.data
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['companies'] })
@@ -76,19 +60,8 @@ export function useUpdateCompany() {
   
   return useMutation({
     mutationFn: async ({ id, data }: { id: number; data: CompanyUpdateData }): Promise<Company> => {
-      const response = await fetch(`/api/v1/customer/companies/${id}/`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      })
-      
-      if (!response.ok) {
-        throw new Error('Failed to update company')
-      }
-      
-      return response.json()
+      const response = await apiClient.patch<Company>(`/customer/companies/${id}/`, data)
+      return response.data
     },
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: ['companies'] })
@@ -102,13 +75,7 @@ export function useDeleteCompany() {
   
   return useMutation({
     mutationFn: async (id: number): Promise<void> => {
-      const response = await fetch(`/api/v1/customer/companies/${id}/`, {
-        method: 'DELETE',
-      })
-      
-      if (!response.ok) {
-        throw new Error('Failed to delete company')
-      }
+      await apiClient.delete(`/customer/companies/${id}/`)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['companies'] })

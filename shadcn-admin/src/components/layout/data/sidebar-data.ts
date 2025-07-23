@@ -249,7 +249,7 @@ export const roleNavGroups = {
         },
         {
           title: 'Клиенты',
-          url: '/users',
+          url: '/customers',
           icon: IconUsers,
         },
         {

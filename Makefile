@@ -88,8 +88,14 @@ frontend.test.coverage:
 start:
 	@docker compose --profile=all up --build
 
+start.fast:
+	@docker compose --profile=all up
+
 start.lite:
 	@docker compose --profile=lite up --build
+
+start.lite.fast:
+	@docker compose --profile=lite up
 
 stop:
 	@docker compose down

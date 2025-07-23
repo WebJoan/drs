@@ -29,8 +29,8 @@ export default function RFQManagement() {
   const [pageSize, setPageSize] = useState(20)
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState<string>('')
-  const [priorityFilter, setPriorityFilter] = useState<string>('')
+  const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [priorityFilter, setPriorityFilter] = useState<string>('all')
   const [activeTab, setActiveTab] = useState('all')
 
   // Дебаунс для поиска
@@ -50,19 +50,19 @@ export default function RFQManagement() {
     page,
     pageSize,
     search: debouncedSearch,
-    status: statusFilter,
-    priority: priorityFilter
+    status: statusFilter === 'all' ? '' : statusFilter,
+    priority: priorityFilter === 'all' ? '' : priorityFilter
   })
 
   const rfqs = rfqsResponse?.results || []
 
   const handleClearFilters = () => {
     setSearch('')
-    setStatusFilter('')
-    setPriorityFilter('')
+    setStatusFilter('all')
+    setPriorityFilter('all')
   }
 
-  const hasActiveFilters = search || statusFilter || priorityFilter
+  const hasActiveFilters = search || (statusFilter !== 'all') || (priorityFilter !== 'all')
 
   // Фильтрация по табам
   const getFilteredRFQs = () => {
@@ -237,7 +237,7 @@ export default function RFQManagement() {
                 <SelectValue placeholder="Статус" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Все статусы</SelectItem>
+                <SelectItem value="all">Все статусы</SelectItem>
                 <SelectItem value="draft">Черновик</SelectItem>
                 <SelectItem value="submitted">Отправлен</SelectItem>
                 <SelectItem value="in_progress">В работе</SelectItem>
@@ -251,7 +251,7 @@ export default function RFQManagement() {
                 <SelectValue placeholder="Приоритет" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Все приоритеты</SelectItem>
+                <SelectItem value="all">Все приоритеты</SelectItem>
                 <SelectItem value="low">Низкий</SelectItem>
                 <SelectItem value="medium">Средний</SelectItem>
                 <SelectItem value="high">Высокий</SelectItem>

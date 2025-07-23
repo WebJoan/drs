@@ -26,6 +26,9 @@ urlpatterns = [
     *static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT),
     path(f"{API_ROOT}/v1/", include(router.urls)),
     path(f"{API_ROOT}/v1/goods/", include("goods.urls")),
+    path(f"{API_ROOT}/v1/customer/", include("customer.urls")),
+    path(f"{API_ROOT}/v1/person/", include("person.urls")),
+    path(f"{API_ROOT}/v1/rfq/", include("rfq.urls")),
     path("", include("django_prometheus.urls")),
 ]
 
