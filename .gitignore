@@ -11,7 +11,7 @@
 .python-version
 
 ## Postgres
-data/
+/data/
 
 node_modules/
 .tanstack
