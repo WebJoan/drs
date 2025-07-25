@@ -21,12 +21,12 @@ interface BaseNavItem {
 }
 
 type NavLink = BaseNavItem & {
-  url: LinkProps['to']
+  url: string // Изменил с LinkProps['to'] на string для большей гибкости
   items?: never
 }
 
 type NavCollapsible = BaseNavItem & {
-  items: (BaseNavItem & { url: LinkProps['to'] })[]
+  items: (BaseNavItem & { url: string })[] // Изменил с LinkProps['to'] на string
   url?: never
 }
 

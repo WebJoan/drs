@@ -4,3 +4,116 @@
 2025-07-23 17:45:24,443 INFO spawned: 'celery-worker' with pid 8
 2025-07-23 17:45:25,457 INFO success: django-app entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
 2025-07-23 17:45:25,457 INFO success: celery-worker entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2025-07-24 15:34:38,574 CRIT Supervisor is running as root.  Privileges were not dropped because no user is specified in the config file.  If you intend to run as root, you can set user=root in the config file to avoid this message.
+2025-07-24 15:34:38,578 INFO supervisord started with pid 1
+2025-07-24 15:34:39,580 INFO spawned: 'django-app' with pid 7
+2025-07-24 15:34:39,584 INFO spawned: 'celery-worker' with pid 8
+2025-07-24 15:34:40,590 INFO success: django-app entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2025-07-24 15:34:40,590 INFO success: celery-worker entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2025-07-25 14:20:48,191 WARN received SIGTERM indicating exit request
+2025-07-25 14:20:48,359 INFO waiting for django-app, celery-worker to die
+2025-07-25 14:20:49,521 WARN stopped: celery-worker (terminated by SIGTERM)
+2025-07-25 14:20:49,650 WARN stopped: django-app (terminated by SIGTERM)
+2025-07-25 14:21:24,196 CRIT Supervisor is running as root.  Privileges were not dropped because no user is specified in the config file.  If you intend to run as root, you can set user=root in the config file to avoid this message.
+2025-07-25 14:21:24,211 INFO supervisord started with pid 1
+2025-07-25 14:21:25,221 INFO spawned: 'django-app' with pid 7
+2025-07-25 14:21:25,223 INFO spawned: 'celery-worker' with pid 8
+2025-07-25 14:21:26,252 INFO success: django-app entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2025-07-25 14:21:26,253 INFO success: celery-worker entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2025-07-25 14:47:15,724 WARN received SIGTERM indicating exit request
+2025-07-25 14:47:15,748 INFO waiting for django-app, celery-worker to die
+2025-07-25 14:47:16,837 WARN stopped: celery-worker (terminated by SIGTERM)
+2025-07-25 14:47:16,858 WARN stopped: django-app (terminated by SIGTERM)
+2025-07-25 14:47:39,749 CRIT Supervisor is running as root.  Privileges were not dropped because no user is specified in the config file.  If you intend to run as root, you can set user=root in the config file to avoid this message.
+2025-07-25 14:47:39,753 INFO supervisord started with pid 1
+2025-07-25 14:47:40,756 INFO spawned: 'django-app' with pid 8
+2025-07-25 14:47:40,760 INFO spawned: 'celery-worker' with pid 9
+2025-07-25 14:47:41,768 INFO success: django-app entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2025-07-25 14:47:41,768 INFO success: celery-worker entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2025-07-25 14:47:52,166 WARN exited: django-app (exit status 1; not expected)
+2025-07-25 14:47:53,173 INFO spawned: 'django-app' with pid 13
+2025-07-25 14:47:54,176 INFO success: django-app entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2025-07-25 14:48:03,547 WARN exited: celery-worker (exit status 1; not expected)
+2025-07-25 14:48:03,874 INFO spawned: 'celery-worker' with pid 17
+2025-07-25 14:48:04,312 WARN exited: django-app (exit status 1; not expected)
+2025-07-25 14:48:04,694 INFO spawned: 'django-app' with pid 19
+2025-07-25 14:48:05,696 INFO success: django-app entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2025-07-25 14:48:05,990 INFO success: celery-worker entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2025-07-25 14:48:16,503 WARN exited: django-app (exit status 1; not expected)
+2025-07-25 14:48:17,520 INFO spawned: 'django-app' with pid 22
+2025-07-25 14:48:18,522 INFO success: django-app entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2025-07-25 14:48:25,382 WARN exited: django-app (exit status 1; not expected)
+2025-07-25 14:48:25,706 INFO spawned: 'django-app' with pid 26
+2025-07-25 14:48:25,707 WARN exited: celery-worker (exit status 1; not expected)
+2025-07-25 14:48:26,709 INFO success: django-app entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2025-07-25 14:48:26,724 INFO spawned: 'celery-worker' with pid 28
+2025-07-25 14:48:27,731 INFO success: celery-worker entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2025-07-25 14:48:35,034 WARN exited: django-app (exit status 1; not expected)
+2025-07-25 14:48:36,040 INFO spawned: 'django-app' with pid 31
+2025-07-25 14:48:37,042 INFO success: django-app entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2025-07-25 14:48:51,658 WARN exited: django-app (exit status 1; not expected)
+2025-07-25 14:48:51,924 INFO spawned: 'django-app' with pid 35
+2025-07-25 14:48:51,924 WARN exited: celery-worker (exit status 1; not expected)
+2025-07-25 14:48:52,931 INFO success: django-app entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2025-07-25 14:48:52,935 INFO spawned: 'celery-worker' with pid 37
+2025-07-25 14:48:53,920 INFO success: celery-worker entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2025-07-25 14:49:00,920 WARN exited: django-app (exit status 1; not expected)
+2025-07-25 14:49:02,425 INFO spawned: 'django-app' with pid 40
+2025-07-25 14:49:03,464 INFO success: django-app entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2025-07-25 14:49:11,648 WARN exited: celery-worker (exit status 1; not expected)
+2025-07-25 14:49:11,867 INFO spawned: 'celery-worker' with pid 44
+2025-07-25 14:49:12,532 WARN exited: django-app (exit status 1; not expected)
+2025-07-25 14:49:13,544 INFO spawned: 'django-app' with pid 46
+2025-07-25 14:49:13,544 INFO success: celery-worker entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2025-07-25 14:49:14,546 INFO success: django-app entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2025-07-25 14:49:20,581 WARN exited: django-app (exit status 1; not expected)
+2025-07-25 14:49:21,585 INFO spawned: 'django-app' with pid 49
+2025-07-25 14:49:21,653 INFO success: django-app entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2025-07-25 14:49:25,478 WARN exited: django-app (exit status 1; not expected)
+2025-07-25 14:49:26,483 INFO spawned: 'django-app' with pid 53
+2025-07-25 14:49:27,485 INFO success: django-app entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2025-07-25 14:49:29,104 WARN exited: celery-worker (exit status 1; not expected)
+2025-07-25 14:49:29,249 INFO spawned: 'celery-worker' with pid 55
+2025-07-25 14:49:30,277 INFO success: celery-worker entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2025-07-25 14:49:32,958 WARN exited: django-app (exit status 1; not expected)
+2025-07-25 14:49:33,968 INFO spawned: 'django-app' with pid 58
+2025-07-25 14:49:34,984 INFO success: django-app entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2025-07-25 14:49:40,237 WARN exited: django-app (exit status 1; not expected)
+2025-07-25 14:49:41,245 INFO spawned: 'django-app' with pid 61
+2025-07-25 14:49:42,248 INFO success: django-app entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2025-07-25 14:49:47,946 WARN exited: django-app (exit status 1; not expected)
+2025-07-25 14:49:48,604 INFO spawned: 'django-app' with pid 65
+2025-07-25 14:49:49,030 WARN exited: celery-worker (exit status 1; not expected)
+2025-07-25 14:49:49,408 INFO spawned: 'celery-worker' with pid 67
+2025-07-25 14:49:49,042 INFO success: django-app entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2025-07-25 14:49:49,042 INFO success: celery-worker entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2025-07-25 14:49:54,655 WARN exited: django-app (exit status 1; not expected)
+2025-07-25 14:49:55,659 INFO spawned: 'django-app' with pid 70
+2025-07-25 14:49:56,664 INFO success: django-app entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2025-07-25 14:50:03,250 WARN exited: django-app (exit status 1; not expected)
+2025-07-25 14:50:04,253 INFO spawned: 'django-app' with pid 74
+2025-07-25 14:50:05,260 INFO success: django-app entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2025-07-25 14:50:17,973 WARN exited: django-app (exit status 1; not expected)
+2025-07-25 14:50:18,978 INFO spawned: 'django-app' with pid 82
+2025-07-25 14:50:19,980 INFO success: django-app entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2025-07-25 14:50:27,327 WARN exited: django-app (exit status 1; not expected)
+2025-07-25 14:50:28,331 INFO spawned: 'django-app' with pid 85
+2025-07-25 14:50:29,332 INFO success: django-app entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2025-07-25 14:50:35,872 WARN exited: django-app (exit status 1; not expected)
+2025-07-25 14:50:36,877 INFO spawned: 'django-app' with pid 88
+2025-07-25 14:50:37,879 INFO success: django-app entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2025-07-25 14:50:45,144 WARN exited: django-app (exit status 1; not expected)
+2025-07-25 14:50:43,997 INFO spawned: 'django-app' with pid 91
+2025-07-25 14:50:45,003 INFO success: django-app entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2025-07-25 14:50:50,330 WARN exited: django-app (exit status 1; not expected)
+2025-07-25 14:50:51,342 INFO spawned: 'django-app' with pid 94
+2025-07-25 14:50:52,347 INFO success: django-app entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2025-07-25 14:50:58,194 WARN exited: django-app (exit status 1; not expected)
+2025-07-25 14:50:59,206 INFO spawned: 'django-app' with pid 97
+2025-07-25 14:51:00,208 INFO success: django-app entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2025-07-25 14:51:05,529 WARN exited: django-app (exit status 1; not expected)
+2025-07-25 14:51:06,532 INFO spawned: 'django-app' with pid 100
+2025-07-25 14:51:07,534 INFO success: django-app entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2025-07-25 14:51:13,297 WARN exited: django-app (exit status 1; not expected)
+2025-07-25 14:51:12,373 INFO spawned: 'django-app' with pid 103
+2025-07-25 14:51:13,390 INFO success: django-app entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)

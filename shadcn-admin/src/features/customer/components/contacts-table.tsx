@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -10,8 +11,6 @@ import {
   useReactTable,
 } from '@tanstack/react-table'
 import { ChevronDown, Search, Loader2 } from 'lucide-react'
-import { useState, useEffect } from 'react'
-
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -28,12 +27,13 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Product } from '@/lib/types'
-import { useProductsContext } from '../context/products-context'
+import { Contact } from '@/hooks/useContacts'
+import { useContactsContext } from '../context/contacts-context'
+import { DataTablePagination as CommonPagination } from '@/components/ui/data-table-pagination'
 
-interface ProductsTableProps {
-  columns: ColumnDef<Product>[]
-  data: Product[]
+interface ContactsTableProps {
+  columns: ColumnDef<Contact>[]
+  data: Contact[]
   pagination?: {
     page: number
     pageSize: number
@@ -48,13 +48,20 @@ interface ProductsTableProps {
   hideSearch?: boolean
 }
 
-export function ProductsTable({ columns, data, pagination, onSearchChange, searchValue, isSearching, hideSearch }: ProductsTableProps) {
+export function ContactsTable({ 
+  columns, 
+  data, 
+  pagination,
+  onSearchChange,
+  searchValue,
+  isSearching = false,
+  hideSearch
+}: ContactsTableProps) {
+  const { setContactsToDelete, setIsDeleteMultipleDialogOpen } = useContactsContext()
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = useState({})
-
-  const { setProductsToDelete, setIsDeleteMultipleDialogOpen, setClearSelection } = useProductsContext()
 
   const table = useReactTable({
     data,
@@ -75,26 +82,31 @@ export function ProductsTable({ columns, data, pagination, onSearchChange, searc
     },
   })
 
-  // Регистрируем функцию сброса выбора в контексте
-  useEffect(() => {
-    const clearSelectionFn = () => {
-      setRowSelection({})
-    }
-    setClearSelection(() => clearSelectionFn)
-    
-    return () => {
-      setClearSelection(null)
-    }
-  }, [setClearSelection])
-
   const handleDeleteSelected = () => {
     const selectedRows = table.getFilteredSelectedRowModel().rows
-    const selectedProducts = selectedRows.map(row => row.original)
-    setProductsToDelete(selectedProducts)
+    const selectedContacts = selectedRows.map(row => row.original)
+    setContactsToDelete(selectedContacts)
     setIsDeleteMultipleDialogOpen(true)
   }
 
-  return (
+  // Функция для получения читаемых названий колонок
+  const getColumnDisplayName = (columnId: string): string => {
+    const columnNames: Record<string, string> = {
+      select: 'Выбор',
+      contact: 'Контакт',
+      company: 'Компания',
+      contacts: 'Контактные данные',
+      status: 'Статус',
+      type: 'Тип',
+      created_at: 'Добавлен',
+      'quick-actions': 'Быстрые действия',
+      actions: 'Действия',
+    }
+    
+    return columnNames[columnId] || columnId
+  }
+
+    return (
     <div className="w-full">
       <div className="flex items-center py-4">
         {!hideSearch && (
@@ -105,7 +117,7 @@ export function ProductsTable({ columns, data, pagination, onSearchChange, searc
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             )}
             <Input
-              placeholder="Поиск товаров..."
+              placeholder="Поиск контактов..."
               value={searchValue ?? ''}
               onChange={(event) => onSearchChange?.(event.target.value)}
               className="pl-10"
@@ -125,7 +137,7 @@ export function ProductsTable({ columns, data, pagination, onSearchChange, searc
           )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="ml-auto h-8">
+              <Button variant="outline" className="w-full sm:w-auto">
                 Колонки <ChevronDown className="ml-2 h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -141,7 +153,7 @@ export function ProductsTable({ columns, data, pagination, onSearchChange, searc
                       checked={column.getIsVisible()}
                       onCheckedChange={(value) => column.toggleVisibility(!!value)}
                     >
-                      {column.id}
+                      {getColumnDisplayName(column.id)}
                     </DropdownMenuCheckboxItem>
                   )
                 })}
@@ -149,7 +161,7 @@ export function ProductsTable({ columns, data, pagination, onSearchChange, searc
           </DropdownMenu>
         </div>
       </div>
-      <div className="rounded-md border relative">
+      <div className='rounded-md border relative'>
         {isSearching && (
           <div className="absolute top-0 left-0 right-0 h-1 bg-primary/20 rounded-t-md overflow-hidden">
             <div className="h-full bg-primary w-full animate-pulse transition-all duration-200"></div>
@@ -183,14 +195,20 @@ export function ProductsTable({ columns, data, pagination, onSearchChange, searc
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
                     </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
+                <TableCell
+                  colSpan={columns.length}
+                  className='h-24 text-center'
+                >
                   Нет результатов.
                 </TableCell>
               </TableRow>
@@ -199,50 +217,12 @@ export function ProductsTable({ columns, data, pagination, onSearchChange, searc
         </Table>
       </div>
       {pagination && (
-        <div className="flex items-center justify-between space-x-2 py-4">
-          <div className="flex-1 text-sm text-muted-foreground">
-            {table.getFilteredSelectedRowModel().rows.length} из{' '}
-            {data.length} строк выбрано на странице. Всего: {pagination.total} товаров.
-          </div>
-          <div className="flex items-center space-x-6">
-            <div className="flex items-center space-x-2">
-              <p className="text-sm font-medium">Строк на странице</p>
-              <select
-                value={pagination.pageSize}
-                onChange={(e) => pagination.onPageSizeChange(Number(e.target.value))}
-                className="h-8 w-[70px] rounded border border-input bg-background px-3 py-1 text-sm"
-              >
-                <option value={25}>25</option>
-                <option value={50}>50</option>
-                <option value={100}>100</option>
-                <option value={200}>200</option>
-              </select>
-            </div>
-            <div className="flex items-center space-x-2">
-              <p className="text-sm font-medium">
-                Страница {pagination.page} из {pagination.totalPages}
-              </p>
-              <div className="space-x-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => pagination.onPageChange(pagination.page - 1)}
-                  disabled={pagination.page <= 1}
-                >
-                  Предыдущая
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => pagination.onPageChange(pagination.page + 1)}
-                  disabled={pagination.page >= pagination.totalPages}
-                >
-                  Следующая
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <CommonPagination 
+          table={table} 
+          pagination={pagination}
+          customPagination={true}
+          showRowsSelected={true}
+        />
       )}
     </div>
   )

@@ -6,6 +6,8 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
+from rest_framework.pagination import PageNumberPagination
+from django.db.models import Q
 
 from user.serializers import (
     UpdatePasswordSerializer,
@@ -68,20 +70,59 @@ class CurrentUserViewSet(ImprovedViewSet):
         return Response(None, status.HTTP_204_NO_CONTENT)
 
 
+class UserPageNumberPagination(PageNumberPagination):
+    page_size = 50  # 50 пользователей на страницу для оптимальной производительности
+    page_size_query_param = 'page_size'
+    max_page_size = 200  # Максимум 200 пользователей на страницу
+
+    def get_paginated_response(self, data):
+        return Response({
+            'count': self.page.paginator.count,
+            'next': self.get_next_link(),
+            'previous': self.get_previous_link(),
+            'page': self.page.number,
+            'page_size': self.page_size,
+            'total_pages': self.page.paginator.num_pages,
+            'results': data
+        })
+
+
 class UserViewSet(ImprovedViewSet):
     """For managing users list."""
 
     default_permission_classes = (IsAuthenticated,)
     default_serializer_class = UserSimpleSerializer
     queryset = User.objects.all()
+    pagination_class = UserPageNumberPagination
+    ordering = ['-id']  # Стабильная сортировка (сначала новые пользователи по ID)
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+
+        # Поиск по имени, фамилии, email, username
+        search = self.request.query_params.get('search', None)
+        if search:
+            queryset = queryset.filter(
+                Q(first_name__icontains=search) |
+                Q(last_name__icontains=search) |
+                Q(email__icontains=search) |
+                Q(username__icontains=search)
+            )
+
+        return queryset.distinct().order_by(*self.ordering)
 
     @extend_schema(
-        description="Get list of all users.",
+        description="Get list of all users with pagination and search.",
         responses={200: UserSimpleSerializer(many=True)},
     )
     def list(self, request: Request) -> Response:
-        """Get all users."""
-        users = self.get_queryset()
+        """Get all users with pagination."""
+        users = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(users)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
         serializer = self.get_serializer(users, many=True)
         return Response(serializer.data, status.HTTP_200_OK)
 

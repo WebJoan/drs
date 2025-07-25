@@ -252,7 +252,7 @@ export function ProductsDialogs() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="no_manager">Без менеджера</SelectItem>
-                      {users?.filter(user => user.role === 'product').map((user) => (
+                      {Array.isArray(users) && users.filter(user => user.role === 'product').map((user) => (
                         <SelectItem key={user.id} value={user.id.toString()}>
                           {user.first_name} {user.last_name}
                         </SelectItem>

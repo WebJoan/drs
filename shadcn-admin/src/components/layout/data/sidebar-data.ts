@@ -19,6 +19,8 @@ import {
   IconUserOff,
   IconUsers,
   IconShoppingCart,
+  IconFileText,
+  IconClipboardList,
 } from '@tabler/icons-react'
 import { AudioWaveform, Command, GalleryVerticalEnd } from 'lucide-react'
 import { type SidebarData } from '../types'
@@ -241,6 +243,16 @@ export const roleNavGroups = {
           title: 'Панель продаж',
           url: '/',
           icon: IconLayoutDashboard,
+        },
+        {
+          title: 'Запросы цен (RFQ)',
+          url: '/rfq',
+          icon: IconFileText,
+        },
+        {
+          title: 'Предложения',
+          url: '/rfq/quotations',
+          icon: IconClipboardList,
         },
         {
           title: 'Каталог товаров',

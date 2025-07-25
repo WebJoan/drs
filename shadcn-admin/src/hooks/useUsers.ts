@@ -3,16 +3,59 @@ import apiClient from '@/lib/api-client'
 import type { User, CreateUserData, UpdateUserData, ApiError } from '@/lib/types'
 import { toast } from 'sonner'
 
-// Получение списка пользователей
-export const useUsers = () => {
+// Интерфейс для ответа с пагинацией пользователей
+interface UsersResponse {
+  count: number
+  next: string | null
+  previous: string | null
+  page: number
+  page_size: number
+  total_pages: number
+  results: User[]
+}
+
+// Получение списка пользователей с пагинацией и поиском
+export const useUsers = (page = 1, pageSize = 50, search = '') => {
   return useQuery({
-    queryKey: ['users'],
-    queryFn: async (): Promise<User[]> => {
+    queryKey: ['users', page, pageSize, search],
+    queryFn: async (): Promise<UsersResponse> => {
       try {
-        const response = await apiClient.get<User[]>('/users/')
+        const params = new URLSearchParams({
+          page: page.toString(),
+          page_size: pageSize.toString(),
+        })
+
+        if (search.trim()) {
+          params.append('search', search.trim())
+        }
+
+        const response = await apiClient.get<UsersResponse>(`/users/?${params.toString()}`)
         return response.data
       } catch (error: any) {
         console.error('Ошибка получения пользователей:', error)
+        if (error.response?.data?.detail) {
+          throw new Error(error.response.data.detail)
+        }
+        throw new Error('Не удалось загрузить список пользователей')
+      }
+    },
+    retry: 2,
+    staleTime: 5 * 60 * 1000, // 5 минут
+    gcTime: 10 * 60 * 1000, // 10 минут
+  })
+}
+
+// Получение всех пользователей без пагинации (для случаев, когда нужны все)
+export const useAllUsers = () => {
+  return useQuery({
+    queryKey: ['users', 'all'],
+    queryFn: async (): Promise<User[]> => {
+      try {
+        // Получаем все пользователи через большой page_size
+        const response = await apiClient.get<UsersResponse>('/users/?page_size=1000')
+        return response.data.results
+      } catch (error: any) {
+        console.error('Ошибка получения всех пользователей:', error)
         if (error.response?.data?.detail) {
           throw new Error(error.response.data.detail)
         }

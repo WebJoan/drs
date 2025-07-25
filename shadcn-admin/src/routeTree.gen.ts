@@ -35,6 +35,9 @@ import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes
 import { Route as AuthenticatedSettingsDisplayRouteImport } from './routes/_authenticated/settings/display'
 import { Route as AuthenticatedSettingsAppearanceRouteImport } from './routes/_authenticated/settings/appearance'
 import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_authenticated/settings/account'
+import { Route as AuthenticatedRfqQuotationsRouteImport } from './routes/_authenticated/rfq/quotations'
+import { Route as AuthenticatedRfqCreateRouteImport } from './routes/_authenticated/rfq/create'
+import { Route as AuthenticatedRfqRfqIdRouteImport } from './routes/_authenticated/rfq/$rfqId'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
@@ -173,6 +176,22 @@ const AuthenticatedSettingsAccountRoute =
     path: '/account',
     getParentRoute: () => AuthenticatedSettingsRouteRoute,
   } as any)
+const AuthenticatedRfqQuotationsRoute =
+  AuthenticatedRfqQuotationsRouteImport.update({
+    id: '/rfq/quotations',
+    path: '/rfq/quotations',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedRfqCreateRoute = AuthenticatedRfqCreateRouteImport.update({
+  id: '/rfq/create',
+  path: '/rfq/create',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedRfqRfqIdRoute = AuthenticatedRfqRfqIdRouteImport.update({
+  id: '/rfq/$rfqId',
+  path: '/rfq/$rfqId',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
@@ -187,6 +206,9 @@ export interface FileRoutesByFullPath {
   '/500': typeof errors500Route
   '/503': typeof errors503Route
   '/': typeof AuthenticatedIndexRoute
+  '/rfq/$rfqId': typeof AuthenticatedRfqRfqIdRoute
+  '/rfq/create': typeof AuthenticatedRfqCreateRoute
+  '/rfq/quotations': typeof AuthenticatedRfqQuotationsRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayRoute
@@ -213,6 +235,9 @@ export interface FileRoutesByTo {
   '/500': typeof errors500Route
   '/503': typeof errors503Route
   '/': typeof AuthenticatedIndexRoute
+  '/rfq/$rfqId': typeof AuthenticatedRfqRfqIdRoute
+  '/rfq/create': typeof AuthenticatedRfqCreateRoute
+  '/rfq/quotations': typeof AuthenticatedRfqQuotationsRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayRoute
@@ -242,6 +267,9 @@ export interface FileRoutesById {
   '/(errors)/500': typeof errors500Route
   '/(errors)/503': typeof errors503Route
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/rfq/$rfqId': typeof AuthenticatedRfqRfqIdRoute
+  '/_authenticated/rfq/create': typeof AuthenticatedRfqCreateRoute
+  '/_authenticated/rfq/quotations': typeof AuthenticatedRfqQuotationsRoute
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/_authenticated/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/_authenticated/settings/display': typeof AuthenticatedSettingsDisplayRoute
@@ -271,6 +299,9 @@ export interface FileRouteTypes {
     | '/500'
     | '/503'
     | '/'
+    | '/rfq/$rfqId'
+    | '/rfq/create'
+    | '/rfq/quotations'
     | '/settings/account'
     | '/settings/appearance'
     | '/settings/display'
@@ -297,6 +328,9 @@ export interface FileRouteTypes {
     | '/500'
     | '/503'
     | '/'
+    | '/rfq/$rfqId'
+    | '/rfq/create'
+    | '/rfq/quotations'
     | '/settings/account'
     | '/settings/appearance'
     | '/settings/display'
@@ -325,6 +359,9 @@ export interface FileRouteTypes {
     | '/(errors)/500'
     | '/(errors)/503'
     | '/_authenticated/'
+    | '/_authenticated/rfq/$rfqId'
+    | '/_authenticated/rfq/create'
+    | '/_authenticated/rfq/quotations'
     | '/_authenticated/settings/account'
     | '/_authenticated/settings/appearance'
     | '/_authenticated/settings/display'
@@ -538,6 +575,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsAccountRouteImport
       parentRoute: typeof AuthenticatedSettingsRouteRoute
     }
+    '/_authenticated/rfq/quotations': {
+      id: '/_authenticated/rfq/quotations'
+      path: '/rfq/quotations'
+      fullPath: '/rfq/quotations'
+      preLoaderRoute: typeof AuthenticatedRfqQuotationsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/rfq/create': {
+      id: '/_authenticated/rfq/create'
+      path: '/rfq/create'
+      fullPath: '/rfq/create'
+      preLoaderRoute: typeof AuthenticatedRfqCreateRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/rfq/$rfqId': {
+      id: '/_authenticated/rfq/$rfqId'
+      path: '/rfq/$rfqId'
+      fullPath: '/rfq/$rfqId'
+      preLoaderRoute: typeof AuthenticatedRfqRfqIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -567,6 +625,9 @@ const AuthenticatedSettingsRouteRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedRfqRfqIdRoute: typeof AuthenticatedRfqRfqIdRoute
+  AuthenticatedRfqCreateRoute: typeof AuthenticatedRfqCreateRoute
+  AuthenticatedRfqQuotationsRoute: typeof AuthenticatedRfqQuotationsRoute
   AuthenticatedAppsIndexRoute: typeof AuthenticatedAppsIndexRoute
   AuthenticatedChatsIndexRoute: typeof AuthenticatedChatsIndexRoute
   AuthenticatedCustomersIndexRoute: typeof AuthenticatedCustomersIndexRoute
@@ -580,6 +641,9 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRouteRoute: AuthenticatedSettingsRouteRouteWithChildren,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedRfqRfqIdRoute: AuthenticatedRfqRfqIdRoute,
+  AuthenticatedRfqCreateRoute: AuthenticatedRfqCreateRoute,
+  AuthenticatedRfqQuotationsRoute: AuthenticatedRfqQuotationsRoute,
   AuthenticatedAppsIndexRoute: AuthenticatedAppsIndexRoute,
   AuthenticatedChatsIndexRoute: AuthenticatedChatsIndexRoute,
   AuthenticatedCustomersIndexRoute: AuthenticatedCustomersIndexRoute,

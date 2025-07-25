@@ -4,13 +4,13 @@ import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Loader2, RefreshCw, AlertCircle, Package, Search as SearchIcon } from 'lucide-react'
+import { Loader2, RefreshCw, AlertCircle, Package } from 'lucide-react'
 import { useProducts } from '@/hooks/useProducts'
 import { columns } from './components/products-columns'
 import { ProductsDialogs } from './components/products-dialogs'
 import { ProductsPrimaryButtons } from './components/products-primary-buttons'
-import { ProductsTable } from './components/products-table'
+import { UniversalDataTable } from '@/components/ui/universal-data-table'
+import { useProductsContext } from './context/products-context'
 
 import ProductsProvider from './context/products-context'
 import { useState, useEffect } from 'react'
@@ -128,44 +128,58 @@ export default function Products() {
         </div>
 
         <div className='space-y-4'>
-          {/* Поисковая строка всегда видна */}
-          <div className="flex items-center py-4">
-            <div className="relative flex-1 max-w-sm">
-              {showSearchLoader ? (
-                <Loader2 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 animate-spin" />
-              ) : (
-                <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              )}
-              <Input
-                placeholder="Поиск товаров..."
-                value={search}
-                onChange={(event) => {
-                  setSearch(event.target.value)
-                  setPage(1) // Сброс на первую страницу при поиске
-                }}
-                className="pl-10"
-              />
-            </div>
-          </div>
-
           {productsResponse?.results && productsResponse.results.length > 0 ? (
-            <ProductsTable 
+            <UniversalDataTable 
               data={productsResponse.results} 
               columns={columns}
-              pagination={{
-                page,
-                pageSize,
-                total: productsResponse.count,
-                totalPages: productsResponse.total_pages,
-                onPageChange: (newPage) => {
-                  setPage(newPage)
+              enableRowSelection={true}
+              enableSorting={true}
+              enableColumnVisibility={true}
+              enableFiltering={true}
+              pagination={{ 
+                type: 'external',
+                config: {
+                  page,
+                  pageSize,
+                  total: productsResponse.count,
+                  totalPages: productsResponse.total_pages,
+                  onPageChange: (newPage: number) => {
+                    setPage(newPage)
+                  },
+                  onPageSizeChange: (newPageSize: number) => {
+                    setPageSize(newPageSize)
+                    setPage(1) // Сброс на первую страницу при изменении размера
+                  }
                 },
-                onPageSizeChange: (newPageSize) => {
-                  setPageSize(newPageSize)
-                  setPage(1) // Сброс на первую страницу при изменении размера
-                }
+                showRowsSelected: true
               }}
-              hideSearch={true} // Скрываем поисковую строку в таблице
+              search={{
+                enabled: true,
+                placeholder: 'Поиск товаров...',
+                value: search,
+                onChange: (value: string) => {
+                  setSearch(value)
+                  setPage(1) // Сброс на первую страницу при поиске
+                },
+                isSearching: showSearchLoader
+              }}
+              bulkActions={{
+                enabled: true,
+                getSelectedItems: (selectedRows: any[]) => {
+                  // Обработка выбранных строк будет происходить через контекст
+                },
+                actions: [
+                  {
+                    label: 'Удалить выбранные',
+                    variant: 'destructive',
+                    onClick: (selectedRows: any[]) => {
+                      // Логика удаления будет обрабатываться через контекст
+                      console.log('Delete selected:', selectedRows)
+                    }
+                  }
+                ]
+              }}
+              emptyMessage="Нет результатов."
             />
           ) : (
             <div className='flex flex-col items-center justify-center py-12 text-center'>

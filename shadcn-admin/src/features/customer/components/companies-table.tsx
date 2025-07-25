@@ -6,7 +6,6 @@ import {
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
-  getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table'
@@ -28,12 +27,30 @@ import {
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Building2, Users, Phone, Mail, ChevronDown } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Building2, Users, Phone, Mail, ChevronDown, Search, Loader2 } from 'lucide-react'
+import { DataTablePagination as CommonPagination } from '@/components/ui/data-table-pagination'
 import type { Company } from '../types'
 
 interface CompaniesTableProps {
   companies: Company[]
   isLoading?: boolean
+  pagination?: {
+    page: number
+    pageSize: number
+    total: number
+    totalPages: number
+    onPageChange: (page: number) => void
+    onPageSizeChange: (pageSize: number) => void
+  }
+  onSearchChange?: (search: string) => void
+  searchValue?: string
+  isSearching?: boolean
+  hideSearch?: boolean
+  hideColumnsButton?: boolean
+  onTableInstanceChange?: (table: any) => void
+  columnVisibility?: any
+  onColumnVisibilityChange?: (visibility: any) => void
 }
 
 export const columns: ColumnDef<Company>[] = [
@@ -177,11 +194,20 @@ export const columns: ColumnDef<Company>[] = [
 
 export function CompaniesTable({ 
   companies, 
-  isLoading
+  isLoading,
+  pagination,
+  onSearchChange,
+  searchValue,
+  isSearching,
+  hideSearch,
+  hideColumnsButton = false,
+  onTableInstanceChange,
+  columnVisibility: externalColumnVisibility,
+  onColumnVisibilityChange
 }: CompaniesTableProps) {
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(externalColumnVisibility || {})
   const [rowSelection, setRowSelection] = useState({})
 
   const table = useReactTable({
@@ -190,11 +216,11 @@ export function CompaniesTable({
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    onColumnVisibilityChange: setColumnVisibility,
+    onColumnVisibilityChange: onColumnVisibilityChange || setColumnVisibility,
     onRowSelectionChange: setRowSelection,
+    manualPagination: true, // Используем внешнюю пагинацию
     state: {
       sorting,
       columnFilters,
@@ -202,6 +228,20 @@ export function CompaniesTable({
       rowSelection,
     },
   })
+
+  // Передаём экземпляр таблицы наверх
+  useEffect(() => {
+    if (onTableInstanceChange) {
+      onTableInstanceChange(table)
+    }
+  }, [table, onTableInstanceChange])
+
+  // Обновляем видимость колонок при изменении извне
+  useEffect(() => {
+    if (externalColumnVisibility) {
+      setColumnVisibility(externalColumnVisibility)
+    }
+  }, [externalColumnVisibility])
 
   // Функция для получения читаемых названий колонок
   const getColumnDisplayName = (columnId: string): string => {
@@ -222,6 +262,21 @@ export function CompaniesTable({
   return (
     <div className="w-full">
       <div className="flex items-center py-4">
+        {!hideSearch && (
+          <div className="relative flex-1 max-w-sm">
+            {isSearching ? (
+              <Loader2 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 animate-spin" />
+            ) : (
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            )}
+            <Input
+              placeholder="Поиск компаний..."
+              value={searchValue ?? ''}
+              onChange={(event) => onSearchChange?.(event.target.value)}
+              className="pl-10"
+            />
+          </div>
+        )}
         <div className="flex items-center space-x-2 ml-auto">
           {table.getFilteredSelectedRowModel().rows.length > 0 && (
             <Button
@@ -232,41 +287,47 @@ export function CompaniesTable({
               Удалить выбранные ({table.getFilteredSelectedRowModel().rows.length})
             </Button>
           )}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="h-8">
-                Колонки <ChevronDown className="ml-2 h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {table
-                .getAllColumns()
-                .filter((column) => column.getCanHide())
-                .map((column) => {
-                  const columnName = getColumnDisplayName(column.id)
-                  return (
-                    <DropdownMenuCheckboxItem
-                      key={column.id}
-                      className="capitalize"
-                      checked={column.getIsVisible()}
-                      onCheckedChange={(value) => column.toggleVisibility(!!value)}
-                    >
-                      {columnName}
-                    </DropdownMenuCheckboxItem>
-                  )
-                })}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {!hideColumnsButton && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+               <Button variant="outline" className="w-full sm:w-auto">
+                  Колонки <ChevronDown className="ml-2 h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {table
+                  .getAllColumns()
+                  .filter((column) => column.getCanHide())
+                  .map((column) => {
+                    return (
+                      <DropdownMenuCheckboxItem
+                        key={column.id}
+                        className="capitalize"
+                        checked={column.getIsVisible()}
+                        onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                      >
+                        {getColumnDisplayName(column.id)}
+                      </DropdownMenuCheckboxItem>
+                    )
+                  })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </div>
-      <div className="rounded-md border overflow-x-auto">
+      <div className="rounded-md border relative">
+        {isSearching && (
+          <div className="absolute top-0 left-0 right-0 h-1 bg-primary/20 rounded-t-md overflow-hidden">
+            <div className="h-full bg-primary w-full animate-pulse transition-all duration-200"></div>
+          </div>
+        )}
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
                   return (
-                    <TableHead key={header.id} className="whitespace-nowrap">
+                    <TableHead key={header.id}>
                       {header.isPlaceholder
                         ? null
                         : flexRender(
@@ -279,7 +340,7 @@ export function CompaniesTable({
               </TableRow>
             ))}
           </TableHeader>
-          <TableBody>
+          <TableBody className={isSearching ? 'opacity-60 transition-opacity duration-200' : 'transition-opacity duration-200'}>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
@@ -287,7 +348,7 @@ export function CompaniesTable({
                   data-state={row.getIsSelected() && 'selected'}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="whitespace-nowrap">
+                    <TableCell key={cell.id}>
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()
@@ -302,37 +363,21 @@ export function CompaniesTable({
                   colSpan={columns.length}
                   className="h-24 text-center"
                 >
-                  {isLoading ? 'Загрузка...' : 'Нет данных.'}
+                  {isLoading ? 'Загрузка...' : 'Нет результатов.'}
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
       </div>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-2 sm:space-y-0 sm:space-x-2 py-4">
-        <div className="text-sm text-muted-foreground order-2 sm:order-1">
-          {table.getFilteredSelectedRowModel().rows.length} из{' '}
-          {table.getFilteredRowModel().rows.length} строк выбрано.
-        </div>
-        <div className="flex space-x-2 order-1 sm:order-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            Назад
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            Вперед
-          </Button>
-        </div>
-      </div>
+      {pagination && (
+        <CommonPagination 
+          table={table} 
+          pagination={pagination}
+          customPagination={true}
+          showRowsSelected={true}
+        />
+      )}
     </div>
   )
 } 

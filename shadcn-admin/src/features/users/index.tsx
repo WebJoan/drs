@@ -9,11 +9,13 @@ import { useUsers } from '@/hooks/useUsers'
 import { columns } from './components/users-columns'
 import { UsersDialogs } from './components/users-dialogs'
 import { UsersPrimaryButtons } from './components/users-primary-buttons'
-import { UsersTable } from './components/users-table'
+import { UniversalDataTable } from '@/components/ui/universal-data-table'
+import { useUsersContext } from './context/users-context'
 import UsersProvider from './context/users-context'
 
 export default function Users() {
-  const { data: users, isLoading, error, refetch, isRefetching } = useUsers()
+  const { data: usersResponse, isLoading, error, refetch, isRefetching } = useUsers()
+  const users = usersResponse?.results || []
 
   const handleRefresh = () => {
     refetch()
@@ -95,7 +97,20 @@ export default function Users() {
 
         <div className='space-y-4'>
           {users && users.length > 0 ? (
-            <UsersTable data={users} columns={columns} />
+            <UniversalDataTable 
+              data={users} 
+              columns={columns}
+              enableRowSelection={true}
+              enableSorting={true}
+              enableColumnVisibility={true}
+              enableFiltering={true}
+              pagination={{ type: 'internal' }}
+              onRowSelectionChange={(selectedRows: any[]) => {
+                // Синхронизация с контекстом users
+                console.log('Selected users:', selectedRows)
+              }}
+              emptyMessage="Нет данных для отображения."
+            />
           ) : (
             <div className='flex flex-col items-center justify-center py-12 text-center'>
               <UsersIcon className='h-12 w-12 text-muted-foreground mb-4' />
