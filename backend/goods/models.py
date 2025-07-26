@@ -4,6 +4,7 @@ from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from user.models import User
 from core.mixins import ExtIdMixin
+from django_softdelete.models import SoftDeleteModel
 
 
 class ProductGroup(ExtIdMixin, models.Model):
@@ -76,7 +77,7 @@ class Brand(ExtIdMixin, models.Model):
         return self.name
     
 
-class Product(ExtIdMixin, models.Model):
+class Product(SoftDeleteModel, ExtIdMixin):
     subgroup = models.ForeignKey(
         ProductSubgroup, 
         on_delete=models.CASCADE, 
@@ -121,6 +122,9 @@ class Product(ExtIdMixin, models.Model):
 
     def __str__(self):
         return self.name
+    
+    def perform_destroy(self, instance):
+        instance.delete()
 
     def get_manager(self):
         """

@@ -37,11 +37,11 @@ class ProductPageNumberPagination(PageNumberPagination):
 
 
 class ProductViewSet(viewsets.ModelViewSet):
-    queryset = Product.objects.select_related('subgroup', 'brand', 'product_manager').all()
+    queryset = Product.objects.select_related('subgroup', 'brand', 'product_manager').filter(deleted_at__isnull=True)
     permission_classes = [ProductPermission]
     pagination_class = ProductPageNumberPagination
     ordering = ['-id']  # Стабильная сортировка (сначала новые товары по ID)
-    
+
     def get_serializer_class(self):
         if self.action == 'create':
             return ProductCreateSerializer
@@ -102,6 +102,25 @@ class ProductViewSet(viewsets.ModelViewSet):
         response_serializer = ProductSerializer(product)
         return Response(response_serializer.data)
     
+    def destroy(self, request, *args, **kwargs):
+        """Переопределяем метод destroy для мягкого удаления"""
+        instance = self.get_object()
+        
+        # Проверяем, что товар не удален
+        if hasattr(instance, 'deleted_at') and instance.deleted_at is not None:
+            return Response(
+                {'error': 'Товар уже удален'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Выполняем мягкое удаление
+        instance.delete()
+        
+        return Response(
+            {'message': 'Товар успешно удален'}, 
+            status=status.HTTP_204_NO_CONTENT
+        )
+    
     @action(detail=False, methods=['delete'])
     def bulk_delete(self, request):
         """Массовое удаление товаров"""
@@ -112,11 +131,22 @@ class ProductViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        deleted_count = Product.objects.filter(id__in=ids).count()
-        Product.objects.filter(id__in=ids).delete()
+        # Получаем товары для мягкого удаления (только не удаленные)
+        products_to_delete = Product.objects.filter(id__in=ids, deleted_at__isnull=True)
+        deleted_count = products_to_delete.count()
+        
+        if deleted_count == 0:
+            return Response(
+                {'error': 'Товары уже удалены или не найдены'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Выполняем мягкое удаление
+        for product in products_to_delete:
+            product.delete()
         
         return Response({
-            'message': f'Удалено {deleted_count} товаров',
+            'message': f'Успешно удалено {deleted_count} товаров',
             'deleted_count': deleted_count
         })
     

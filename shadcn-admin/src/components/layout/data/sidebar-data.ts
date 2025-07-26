@@ -2,7 +2,6 @@ import {
   IconBarrierBlock,
   IconBrowserCheck,
   IconBug,
-  IconChecklist,
   IconError404,
   IconHelp,
   IconLayoutDashboard,
@@ -112,11 +111,6 @@ export const roleNavGroups = {
           title: 'Пользователи',
           url: '/users',
           icon: IconUsers,
-        },
-        {
-          title: 'Задачи',
-          url: '/tasks',
-          icon: IconChecklist,
         },
         {
           title: 'Приложения',
@@ -317,11 +311,6 @@ export const roleNavGroups = {
           title: 'Управление товарами',
           url: '/goods',
           icon: IconShoppingCart,
-        },
-        {
-          title: 'Задачи',
-          url: '/tasks',
-          icon: IconChecklist,
         },
         {
           title: 'Чаты',

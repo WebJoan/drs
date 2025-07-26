@@ -53,6 +53,7 @@ dependencies = [
     { name = "django-celery-results" },
     { name = "django-meilisearch-indexer" },
     { name = "django-prometheus" },
+    { name = "django-soft-delete" },
     { name = "django-utils-kit" },
     { name = "djangorestframework" },
     { name = "drf-spectacular" },
@@ -87,6 +88,7 @@ requires-dist = [
     { name = "django-celery-results", specifier = ">=2.5.1" },
     { name = "django-meilisearch-indexer", specifier = ">=1.0.1" },
     { name = "django-prometheus", specifier = ">=2.3.1" },
+    { name = "django-soft-delete", specifier = ">=1.0.19" },
     { name = "django-utils-kit", specifier = ">=1.0.0" },
     { name = "djangorestframework", specifier = ">=3.15.2" },
     { name = "drf-spectacular", specifier = ">=0.27.2" },
@@ -353,6 +355,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/98/f4/cb39ddd2a41e07a274c4e162c076e906ae232d63b66bbabdea0300878877/django_prometheus-2.4.1.tar.gz", hash = "sha256:073628243d2a6de6a8a8c20e5b512872dfb85d66e1b60b28bcf1eca0155dad95", size = 24464, upload-time = "2025-06-25T15:45:37.149Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/01/50/9c5e022fa92574e5d20606687f15a2aa255e10512a17d11a8216fa117f72/django_prometheus-2.4.1-py2.py3-none-any.whl", hash = "sha256:7fe5af7f7c9ad9cd8a429fe0f3f1bf651f0e244f77162147869eab7ec09cc5e7", size = 29541, upload-time = "2025-06-25T15:45:35.433Z" },
+]
+
+[[package]]
+name = "django-soft-delete"
+version = "1.0.19"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "django" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/ce/77/44a6615a7da3ca0ddc624039d399d17d6c3503e1c2dad08b443f8d4a3570/django_soft_delete-1.0.19.tar.gz", hash = "sha256:c67ee8920e1456eca84cc59b3304ef27fa9d476b516be726ce7e1fc558502908", size = 11993, upload-time = "2025-06-19T20:32:20.373Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/96/9e/f8b5a02cdcba606eb40fbe30fe0c9c7493a2c18f83ec3b4620e4e86a34d3/django_soft_delete-1.0.19-py3-none-any.whl", hash = "sha256:46aa5fab513db566d3d7a832529ed27245b5900eaaa705535bc7674055801a46", size = 10889, upload-time = "2025-06-19T20:32:19.083Z" },
 ]
 
 [[package]]
