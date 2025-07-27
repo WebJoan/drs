@@ -454,3 +454,23 @@
 2025-07-25 20:18:00,999 INFO spawned: 'celery-worker' with pid 8
 2025-07-25 20:18:02,005 INFO success: django-app entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
 2025-07-25 20:18:02,006 INFO success: celery-worker entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2025-07-26 22:47:55,330 WARN received SIGTERM indicating exit request
+2025-07-26 22:47:55,335 INFO waiting for django-app, celery-worker to die
+2025-07-26 22:47:56,341 WARN stopped: celery-worker (terminated by SIGTERM)
+2025-07-26 22:47:57,345 WARN stopped: django-app (terminated by SIGTERM)
+2025-07-26 22:47:59,009 CRIT Supervisor is running as root.  Privileges were not dropped because no user is specified in the config file.  If you intend to run as root, you can set user=root in the config file to avoid this message.
+2025-07-26 22:47:59,013 INFO supervisord started with pid 1
+2025-07-26 22:48:00,017 INFO spawned: 'django-app' with pid 7
+2025-07-26 22:48:00,020 INFO spawned: 'celery-worker' with pid 8
+2025-07-26 22:48:01,127 INFO success: django-app entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2025-07-26 22:48:01,127 INFO success: celery-worker entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2025-07-26 22:50:26,066 WARN received SIGTERM indicating exit request
+2025-07-26 22:50:26,067 INFO waiting for django-app, celery-worker to die
+2025-07-26 22:50:27,070 WARN stopped: celery-worker (terminated by SIGTERM)
+2025-07-26 22:50:28,072 WARN stopped: django-app (terminated by SIGTERM)
+2025-07-26 22:50:29,207 CRIT Supervisor is running as root.  Privileges were not dropped because no user is specified in the config file.  If you intend to run as root, you can set user=root in the config file to avoid this message.
+2025-07-26 22:50:29,211 INFO supervisord started with pid 1
+2025-07-26 22:50:30,215 INFO spawned: 'django-app' with pid 7
+2025-07-26 22:50:30,219 INFO spawned: 'celery-worker' with pid 8
+2025-07-26 22:50:31,224 INFO success: django-app entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2025-07-26 22:50:31,225 INFO success: celery-worker entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)

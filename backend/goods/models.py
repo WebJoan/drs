@@ -122,9 +122,6 @@ class Product(SoftDeleteModel, ExtIdMixin):
 
     def __str__(self):
         return self.name
-    
-    def perform_destroy(self, instance):
-        instance.delete()
 
     def get_manager(self):
         """

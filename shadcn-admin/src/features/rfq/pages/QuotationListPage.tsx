@@ -156,13 +156,13 @@ export function QuotationListPage() {
                               params={{ rfqId: quotation.rfq }}
                               className="text-primary hover:underline"
                             >
-                              {quotation.rfq_details.number}
+                              {quotation.rfq_details?.number || '—'}
                             </Link>
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
                               <Building className="h-4 w-4 text-muted-foreground" />
-                              {quotation.rfq_details.company_name}
+                              {quotation.rfq_details?.company_name || '—'}
                             </div>
                           </TableCell>
                           <TableCell>
@@ -180,9 +180,9 @@ export function QuotationListPage() {
                               {statusLabels[quotation.status]}
                             </Badge>
                           </TableCell>
-                          <TableCell>{quotation.currency_details.code}</TableCell>
+                          <TableCell>{quotation.currency_details?.code || '—'}</TableCell>
                           <TableCell className="font-medium">
-                            {quotation.total_amount.toLocaleString()} {quotation.currency_details.symbol}
+                            {quotation.total_amount?.toLocaleString() || '0'} {quotation.currency_details?.symbol || ''}
                           </TableCell>
                           <TableCell>
                             {quotation.valid_until ? (

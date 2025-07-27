@@ -27,6 +27,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { type CreateRFQData } from '@/lib/types'
+import { usePermissions } from '@/contexts/RoleContext'
 
 const rfqSchema = z.object({
   title: z.string().min(1, 'Название обязательно'),
@@ -47,6 +48,24 @@ export function CreateRFQPage() {
   const navigate = useNavigate()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const createRFQ = useCreateRFQ()
+  const { canCreateRFQ } = usePermissions()
+
+  // Проверка прав доступа
+  if (!canCreateRFQ()) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-destructive mb-2">Доступ запрещен</h2>
+          <p className="text-muted-foreground mb-4">
+            У вас нет прав на создание RFQ. Обратитесь к администратору.
+          </p>
+          <Button onClick={() => navigate({ to: '/rfq' })}>
+            Вернуться к списку RFQ
+          </Button>
+        </div>
+      </div>
+    )
+  }
 
   const form = useForm<RFQFormData>({
     resolver: zodResolver(rfqSchema),

@@ -121,10 +121,56 @@ export const useCreateRFQItem = () => {
   return useMutation({
     mutationFn: async ({ rfqId, itemData }: { rfqId: number; itemData: CreateRFQItemData }): Promise<any> => {
       try {
-        const response = await apiClient.post(`/rfq/rfqs/${rfqId}/items/`, itemData)
+        // Создаем FormData для отправки multipart/form-data
+        const formData = new FormData()
+        formData.append('rfq', rfqId.toString())
+        formData.append('line_number', itemData.line_number.toString())
+        formData.append('quantity', itemData.quantity.toString())
+        formData.append('unit', itemData.unit)
+        formData.append('specifications', itemData.specifications)
+        formData.append('comments', itemData.comments)
+        formData.append('is_new_product', itemData.is_new_product.toString())
+        
+        if (itemData.is_new_product) {
+          // Для нового товара отправляем данные о товаре
+          formData.append('product_name', itemData.product_name)
+          formData.append('manufacturer', itemData.manufacturer)
+          formData.append('part_number', itemData.part_number)
+        } else {
+          // Для существующего товара отправляем только ID
+          if (itemData.product) {
+            formData.append('product', itemData.product.toString())
+          }
+        }
+        
+        const response = await apiClient.post('/rfq/rfq-items/', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        })
         return response.data
       } catch (error: any) {
         console.error('Ошибка добавления позиции в RFQ:', error)
+        
+        if (error.response?.data?.detail) {
+          throw new Error(error.response.data.detail)
+        }
+        
+        if (error.response?.data?.errors) {
+          const errors = error.response.data.errors
+          const errorMessages = []
+          
+          for (const [field, messages] of Object.entries(errors)) {
+            if (Array.isArray(messages)) {
+              errorMessages.push(...messages)
+            }
+          }
+          
+          if (errorMessages.length > 0) {
+            throw new Error(errorMessages.join(', '))
+          }
+        }
+        
         throw new Error('Не удалось добавить позицию в RFQ')
       }
     },
@@ -256,6 +302,67 @@ export const useCreateQuotation = () => {
   })
 }
 
+// Создание позиции котировки
+export const useCreateQuotationItem = () => {
+  const queryClient = useQueryClient()
+  
+  return useMutation({
+    mutationFn: async (itemData: CreateQuotationItemData): Promise<any> => {
+      try {
+        const response = await apiClient.post('/rfq/quotation-items/', itemData)
+        return response.data
+      } catch (error: any) {
+        console.error('Ошибка создания позиции котировки:', error)
+        throw new Error('Не удалось создать позицию котировки')
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['quotations'] })
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Не удалось создать позицию котировки')
+    }
+  })
+}
+
+// Создание полной котировки с позициями
+export const useCreateFullQuotation = () => {
+  const queryClient = useQueryClient()
+  const createQuotation = useCreateQuotation()
+  const createQuotationItem = useCreateQuotationItem()
+  
+  return useMutation({
+    mutationFn: async (data: { 
+      quotation: CreateQuotationData, 
+      items: CreateQuotationItemData[] 
+    }): Promise<Quotation> => {
+      try {
+        // Сначала создаем котировку
+        const quotation = await createQuotation.mutateAsync(data.quotation)
+        
+        // Затем добавляем все позиции
+        await Promise.all(
+          data.items.map(item => 
+            createQuotationItem.mutateAsync(item)
+          )
+        )
+        
+        return quotation
+      } catch (error: any) {
+        console.error('Ошибка создания полной котировки:', error)
+        throw new Error('Не удалось создать котировку с позициями')
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['quotations'] })
+      toast.success('Котировка с позициями успешно создана')
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Не удалось создать котировку')
+    }
+  })
+}
+
 // Удаление RFQ
 export const useDeleteRFQ = () => {
   const queryClient = useQueryClient()
@@ -275,6 +382,75 @@ export const useDeleteRFQ = () => {
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Не удалось удалить RFQ')
+    }
+  })
+}
+
+// Загрузка файла для позиции RFQ
+export const useUploadRFQItemFile = () => {
+  const queryClient = useQueryClient()
+  
+  return useMutation({
+    mutationFn: async ({ 
+      rfqItemId, 
+      file, 
+      fileType = 'other', 
+      description = '' 
+    }: {
+      rfqItemId: number
+      file: File
+      fileType?: string
+      description?: string
+    }): Promise<any> => {
+      try {
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('file_type', fileType)
+        formData.append('description', description)
+        
+        const response = await apiClient.post(
+          `/rfq/rfq-items/${rfqItemId}/upload_file/`,
+          formData,
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          }
+        )
+        return response.data
+      } catch (error: any) {
+        console.error('Ошибка загрузки файла:', error)
+        
+        if (error.response?.data?.detail) {
+          throw new Error(error.response.data.detail)
+        }
+        
+        if (error.response?.data?.errors) {
+          const errors = error.response.data.errors
+          const errorMessages = []
+          
+          for (const [field, messages] of Object.entries(errors)) {
+            if (Array.isArray(messages)) {
+              errorMessages.push(...messages)
+            }
+          }
+          
+          if (errorMessages.length > 0) {
+            throw new Error(errorMessages.join(', '))
+          }
+        }
+        
+        throw new Error('Не удалось загрузить файл')
+      }
+    },
+    onSuccess: (data, variables) => {
+      // Инвалидируем кэш для обновления списка файлов
+      queryClient.invalidateQueries({ queryKey: ['rfq'] })
+      queryClient.invalidateQueries({ queryKey: ['rfq-item', variables.rfqItemId] })
+      toast.success('Файл успешно загружен')
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Не удалось загрузить файл')
     }
   })
 } 

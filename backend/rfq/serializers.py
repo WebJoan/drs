@@ -24,7 +24,7 @@ class RFQItemFileSerializer(serializers.ModelSerializer):
     class Meta:
         model = RFQItemFile
         fields = [
-            'id', 'file', 'file_type', 'description', 
+            'id', 'rfq_item', 'file', 'file_type', 'description', 
             'file_size', 'file_url', 'uploaded_at'
         ]
     
@@ -47,14 +47,18 @@ class RFQItemListSerializer(serializers.ModelSerializer):
     """Сериализатор для списка строк RFQ"""
     
     product_name_display = serializers.SerializerMethodField()
+    manufacturer_display = serializers.SerializerMethodField()
+    part_number_display = serializers.SerializerMethodField()
+    product_code = serializers.SerializerMethodField()
     files_count = serializers.IntegerField(source='files.count', read_only=True)
     
     class Meta:
         model = RFQItem
         fields = [
             'id', 'line_number', 'product', 'product_name', 'manufacturer',
-            'part_number', 'product_name_display', 'quantity', 'unit',
-            'is_new_product', 'files_count'
+            'part_number', 'product_name_display', 'manufacturer_display', 
+            'part_number_display', 'product_code', 'quantity', 'unit',
+            'specifications', 'is_new_product', 'files_count'
         ]
     
     def get_product_name_display(self, obj):
@@ -63,11 +67,32 @@ class RFQItemListSerializer(serializers.ModelSerializer):
             return obj.product.name
         return obj.product_name or obj.part_number
 
+    def get_manufacturer_display(self, obj):
+        """Возвращает производителя для отображения"""
+        if obj.product and obj.product.brand:
+            return obj.product.brand.name
+        return obj.manufacturer or '—'
+    
+    def get_part_number_display(self, obj):
+        """Возвращает артикул для отображения"""
+        if obj.product:
+            return obj.product.name  # В модели Product поле name это Part number
+        return obj.part_number or '—'
+    
+    def get_product_code(self, obj):
+        """Возвращает код товара (ext_id)"""
+        if obj.product and obj.product.ext_id:
+            return obj.product.ext_id
+        return '—'
+
 
 class RFQItemDetailSerializer(serializers.ModelSerializer):
     """Детальный сериализатор для строк RFQ"""
     
     product_name_display = serializers.SerializerMethodField()
+    manufacturer_display = serializers.SerializerMethodField()
+    part_number_display = serializers.SerializerMethodField()
+    product_code = serializers.SerializerMethodField()
     product_details = serializers.SerializerMethodField()
     files = RFQItemFileSerializer(many=True, read_only=True)
     
@@ -75,7 +100,8 @@ class RFQItemDetailSerializer(serializers.ModelSerializer):
         model = RFQItem
         fields = [
             'id', 'line_number', 'product', 'product_name', 'manufacturer',
-            'part_number', 'product_name_display', 'product_details',
+            'part_number', 'product_name_display', 'manufacturer_display',
+            'part_number_display', 'product_code', 'product_details',
             'quantity', 'unit', 'specifications', 'comments',
             'is_new_product', 'files', 'created_at'
         ]
@@ -86,12 +112,31 @@ class RFQItemDetailSerializer(serializers.ModelSerializer):
             return obj.product.name
         return obj.product_name or obj.part_number
     
+    def get_manufacturer_display(self, obj):
+        """Возвращает производителя для отображения"""
+        if obj.product and obj.product.brand:
+            return obj.product.brand.name
+        return obj.manufacturer or '—'
+    
+    def get_part_number_display(self, obj):
+        """Возвращает артикул для отображения"""
+        if obj.product:
+            return obj.product.name
+        return obj.part_number or '—'
+    
+    def get_product_code(self, obj):
+        """Возвращает код товара (ext_id)"""
+        if obj.product and obj.product.ext_id:
+            return obj.product.ext_id
+        return '—'
+    
     def get_product_details(self, obj):
         """Возвращает детали товара из базы"""
         if obj.product:
             return {
                 'id': obj.product.id,
                 'name': obj.product.name,
+                'ext_id': obj.product.ext_id,
                 'subgroup': obj.product.subgroup.name,
                 'brand': obj.product.brand.name if obj.product.brand else None,
                 'manager': obj.product.get_manager().get_full_name() if obj.product.get_manager() else None

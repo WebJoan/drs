@@ -1,16 +1,14 @@
-import { useState, useEffect } from 'react'
 import {
   ColumnDef,
-  ColumnFiltersState,
-  SortingState,
-  VisibilityState,
   flexRender,
   getCoreRowModel,
-  getFilteredRowModel,
-  getSortedRowModel,
   useReactTable,
+  getSortedRowModel,
+  SortingState,
+  ColumnFiltersState,
+  getFilteredRowModel,
 } from '@tanstack/react-table'
-import { ChevronDown, Search, Loader2 } from 'lucide-react'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -18,7 +16,6 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Input } from '@/components/ui/input'
 import {
   Table,
   TableBody,
@@ -27,13 +24,17 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Contact } from '@/hooks/useContacts'
-import { useContactsContext } from '../context/contacts-context'
+import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import { ChevronDown, Search, Loader2 } from 'lucide-react'
 import { DataTablePagination as CommonPagination } from '@/components/ui/data-table-pagination'
+import { useContactsContext } from '../context/contacts-context'
+import { usePermissions } from '@/contexts/RoleContext'
+import type { Contact } from '@/hooks/useContacts'
 
 interface ContactsTableProps {
-  columns: ColumnDef<Contact>[]
   data: Contact[]
+  columns: ColumnDef<Contact>[]
   pagination?: {
     page: number
     pageSize: number
@@ -49,18 +50,28 @@ interface ContactsTableProps {
 }
 
 export function ContactsTable({ 
-  columns, 
   data, 
+  columns: baseColumns,
   pagination,
   onSearchChange,
   searchValue,
-  isSearching = false,
-  hideSearch
+  isSearching,
+  hideSearch = false
 }: ContactsTableProps) {
+  const { canDeleteContacts } = usePermissions()
   const { setContactsToDelete, setIsDeleteMultipleDialogOpen } = useContactsContext()
+  const canDelete = canDeleteContacts()
+
+  // Фильтруем колонки в зависимости от разрешений
+  const columns = baseColumns.filter(column => {
+    if (column.id === 'select' && !canDelete) {
+      return false
+    }
+    return true
+  })
+
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = useState({})
 
   const table = useReactTable({
@@ -71,13 +82,10 @@ export function ContactsTable({
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
-    manualPagination: true, // Используем внешнюю пагинацию
     state: {
       sorting,
       columnFilters,
-      columnVisibility,
       rowSelection,
     },
   })
@@ -125,7 +133,7 @@ export function ContactsTable({
           </div>
         )}
         <div className="flex items-center space-x-2 ml-auto">
-          {table.getFilteredSelectedRowModel().rows.length > 0 && (
+          {canDelete && table.getFilteredSelectedRowModel().rows.length > 0 && (
             <Button
               variant="destructive"
               size="sm"
@@ -161,7 +169,7 @@ export function ContactsTable({
           </DropdownMenu>
         </div>
       </div>
-      <div className='rounded-md border relative'>
+      <div className="rounded-md border relative">
         {isSearching && (
           <div className="absolute top-0 left-0 right-0 h-1 bg-primary/20 rounded-t-md overflow-hidden">
             <div className="h-full bg-primary w-full animate-pulse transition-all duration-200"></div>
@@ -207,7 +215,7 @@ export function ContactsTable({
               <TableRow>
                 <TableCell
                   colSpan={columns.length}
-                  className='h-24 text-center'
+                  className="h-24 text-center"
                 >
                   Нет результатов.
                 </TableCell>

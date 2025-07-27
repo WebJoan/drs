@@ -16,6 +16,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { type RFQ } from '@/lib/types'
+import { usePermissions } from '@/contexts/RoleContext'
 
 const statusColors = {
   draft: 'secondary',
@@ -53,6 +54,7 @@ export function RFQListPage() {
   const pageSize = 20
 
   const { data, isLoading, error } = useRFQs(page, pageSize, search)
+  const { canCreateRFQ } = usePermissions()
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('ru-RU', {
@@ -72,17 +74,39 @@ export function RFQListPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button asChild>
-            <Link to="/rfq/create">
-              <Plus className="h-4 w-4 mr-2" />
-              Создать RFQ
-            </Link>
-          </Button>
+          {canCreateRFQ() && (
+            <Button asChild>
+              <Link to="/rfq/create">
+                <Plus className="h-4 w-4 mr-2" />
+                Создать RFQ
+              </Link>
+            </Button>
+          )}
         </div>
       </Header>
 
       <main className="flex-1 p-6">
         <div className="space-y-6">
+          {/* Информация для product manager'ов */}
+          {!canCreateRFQ() && (
+            <Card className="border-blue-200 bg-blue-50/50">
+              <CardContent className="pt-6">
+                <div className="flex items-start gap-3">
+                  <FileText className="h-5 w-5 text-blue-600 mt-0.5" />
+                  <div>
+                    <h3 className="font-medium text-blue-900 mb-1">
+                      Управление предложениями
+                    </h3>
+                    <p className="text-sm text-blue-700">
+                      Просматривайте запросы цен (RFQ) и создавайте предложения. 
+                      Нажмите на любой RFQ чтобы добавить котировку.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Фильтры и поиск */}
           <Card>
             <CardHeader>

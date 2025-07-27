@@ -5,15 +5,19 @@ class CompanyPermission(BasePermission):
     """
     Права доступа для компаний:
     - Все пользователи могут просматривать
-    - Sales менеджеры могут создавать и редактировать свои компании
+    - Sales менеджеры могут создавать и редактировать свои компании, но НЕ УДАЛЯТЬ
     - Product менеджеры могут только просматривать
-    - Администраторы имеют полный доступ
+    - Администраторы имеют полный доступ, включая удаление
     """
     
     def has_permission(self, request, view):
         """Проверка прав на уровне view"""
         if not request.user or not request.user.is_authenticated:
             return False
+        
+        # Только администраторы могут удалять
+        if request.method == 'DELETE':
+            return request.user.role == 'admin' or request.user.is_superuser
         
         # Администраторы имеют полный доступ
         if request.user.role == 'admin' or request.user.is_superuser:
@@ -35,6 +39,10 @@ class CompanyPermission(BasePermission):
         if not request.user or not request.user.is_authenticated:
             return False
         
+        # Только администраторы могут удалять
+        if request.method == 'DELETE':
+            return request.user.role == 'admin' or request.user.is_superuser
+        
         # Администраторы имеют полный доступ
         if request.user.role == 'admin' or request.user.is_superuser:
             return True
@@ -43,7 +51,7 @@ class CompanyPermission(BasePermission):
         if request.user.role == 'product':
             return request.method in SAFE_METHODS
         
-        # Sales менеджеры могут редактировать только свои компании
+        # Sales менеджеры могут редактировать только свои компании, но не удалять
         if request.user.role == 'sales':
             if request.method in SAFE_METHODS:
                 return True

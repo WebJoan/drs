@@ -77,6 +77,10 @@ export function CompaniesDialogs() {
     setIsDeleteDialogOpen,
     companyToDelete,
     setCompanyToDelete,
+    isDeleteMultipleDialogOpen,
+    setIsDeleteMultipleDialogOpen,
+    companiesToDelete,
+    setCompaniesToDelete,
   } = useCompaniesContext()
 
   const createCompanyMutation = useCreateCompany()
@@ -200,6 +204,25 @@ export function CompaniesDialogs() {
     } catch (error) {
       toast.error('Ошибка при удалении компании')
       console.error('Error deleting company:', error)
+    }
+  }
+
+  const onDeleteMultipleConfirm = async () => {
+    if (!companiesToDelete.length) return
+
+    try {
+      // Удаляем все выбранные компании параллельно
+      await Promise.all(
+        companiesToDelete.map(company => 
+          deleteCompanyMutation.mutateAsync(company.id)
+        )
+      )
+      setIsDeleteMultipleDialogOpen(false)
+      setCompaniesToDelete([])
+      toast.success(`Успешно удалено ${companiesToDelete.length} компаний`)
+    } catch (error) {
+      toast.error('Ошибка при удалении компаний')
+      console.error('Ошибка при удалении компаний:', error)
     }
   }
 
@@ -533,6 +556,36 @@ export function CompaniesDialogs() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {deleteCompanyMutation.isPending ? 'Удаление...' : 'Удалить'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Диалог множественного удаления компаний */}
+      <AlertDialog open={isDeleteMultipleDialogOpen} onOpenChange={setIsDeleteMultipleDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Удалить выбранные компании?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Вы уверены, что хотите удалить {companiesToDelete.length} компаний? 
+              Это действие нельзя отменить.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => {
+                setIsDeleteMultipleDialogOpen(false)
+                setCompaniesToDelete([])
+              }}
+            >
+              Отмена
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={onDeleteMultipleConfirm}
+              disabled={deleteCompanyMutation.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteCompanyMutation.isPending ? 'Удаление...' : 'Удалить все'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

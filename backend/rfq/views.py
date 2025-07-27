@@ -1,4 +1,4 @@
-from rest_framework import viewsets, status, filters
+from rest_framework import viewsets, status, filters, serializers
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
@@ -38,7 +38,12 @@ class RFQViewSet(viewsets.ModelViewSet):
     
     queryset = RFQ.objects.select_related(
         'company', 'contact_person', 'sales_manager'
-    ).prefetch_related('items', 'quotations')
+    ).prefetch_related(
+        'items__product__brand', 
+        'items__product__subgroup',
+        'items__files',
+        'quotations'
+    )
     permission_classes = [RFQPermission]
     pagination_class = RFQPagination
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
@@ -160,12 +165,25 @@ class RFQViewSet(viewsets.ModelViewSet):
         
         serializer = self.get_serializer(rfqs, many=True)
         return Response(serializer.data)
+    
+    @action(detail=True, methods=['get'])
+    def quotations(self, request, pk=None):
+        """Получение предложений для конкретного RFQ"""
+        rfq = self.get_object()
+        quotations = rfq.quotations.select_related(
+            'product_manager', 'currency'
+        ).prefetch_related('items')
+        
+        serializer = QuotationListSerializer(quotations, many=True)
+        return Response(serializer.data)
 
 
 class RFQItemViewSet(viewsets.ModelViewSet):
     """ViewSet для работы со строками RFQ"""
     
-    queryset = RFQItem.objects.select_related('rfq', 'product')
+    queryset = RFQItem.objects.select_related(
+        'rfq', 'product__brand', 'product__subgroup'
+    ).prefetch_related('files')
     permission_classes = [RFQPermission]
     parser_classes = [MultiPartParser, FormParser]
     
@@ -174,21 +192,45 @@ class RFQItemViewSet(viewsets.ModelViewSet):
             return RFQItemCreateSerializer
         return RFQItemDetailSerializer
     
+    def perform_create(self, serializer):
+        """Устанавливаем RFQ при создании строки"""
+        rfq_id = self.request.data.get('rfq')
+        if not rfq_id:
+            raise serializers.ValidationError({'rfq': 'Поле rfq обязательно'})
+        
+        try:
+            rfq_id = int(rfq_id)
+            rfq = RFQ.objects.get(id=rfq_id)
+        except (ValueError, TypeError):
+            raise serializers.ValidationError({'rfq': 'Неверный формат ID RFQ'})
+        except RFQ.DoesNotExist:
+            raise serializers.ValidationError({'rfq': 'RFQ не найден'})
+        
+        serializer.save(rfq=rfq)
+    
     @action(detail=True, methods=['post'])
     def upload_file(self, request, pk=None):
         """Загрузка файла к строке RFQ"""
         rfq_item = self.get_object()
         
+        # Проверяем наличие файла
+        if 'file' not in request.FILES:
+            return Response(
+                {'error': 'Файл не найден в запросе'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
         file_data = {
             'rfq_item': rfq_item.id,
-            'file': request.FILES.get('file'),
+            'file': request.FILES['file'],
             'file_type': request.data.get('file_type', 'other'),
             'description': request.data.get('description', '')
         }
         
         serializer = RFQItemFileSerializer(data=file_data)
         if serializer.is_valid():
-            serializer.save()
+            # Используем perform_create для более надежного создания
+            serializer.save(rfq_item=rfq_item)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

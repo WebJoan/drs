@@ -111,12 +111,58 @@ export function usePermissions() {
     return user.role === UserRole.ADMIN
   }
 
+  const canDeleteCompanies = () => {
+    if (!user) return false
+    return user.role === UserRole.ADMIN
+  }
+
+  const canDeleteContacts = () => {
+    if (!user) return false
+    return user.role === UserRole.ADMIN
+  }
+
+  // Новые методы для работы с RFQ и котировками
+  const canCreateQuotations = () => {
+    if (!user) return false
+    return user.role === UserRole.ADMIN || user.role === UserRole.PRODUCT_MANAGER
+  }
+
+  const canEditQuotations = () => {
+    if (!user) return false
+    return user.role === UserRole.ADMIN || user.role === UserRole.PRODUCT_MANAGER
+  }
+
+  const canViewRFQ = () => {
+    if (!user) return false
+    // Все роли могут просматривать RFQ
+    return user.role === UserRole.ADMIN || user.role === UserRole.PRODUCT_MANAGER || user.role === UserRole.SALES_MANAGER
+  }
+
+  const canCreateRFQ = () => {
+    if (!user) return false
+    // Только admin и sales manager могут создавать RFQ
+    return user.role === UserRole.ADMIN || user.role === UserRole.SALES_MANAGER
+  }
+
+  const canEditRFQ = () => {
+    if (!user) return false
+    // Только admin и sales manager могут редактировать RFQ
+    return user.role === UserRole.ADMIN || user.role === UserRole.SALES_MANAGER
+  }
+
   return {
     canCreateProducts,
     canEditProducts,
     canDeleteProducts,
     canViewUsers,
     canManageUsers,
+    canDeleteCompanies,
+    canDeleteContacts,
+    canCreateQuotations,
+    canEditQuotations,
+    canViewRFQ,
+    canCreateRFQ,
+    canEditRFQ,
     user,
     currentInterfaceRole,
   }

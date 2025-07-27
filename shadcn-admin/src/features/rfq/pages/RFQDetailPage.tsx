@@ -1,12 +1,13 @@
 import { useState } from 'react'
-import { Link, useParams } from '@tanstack/react-router'
-import { ArrowLeft, Edit, Plus, FileText, Building, User, Calendar, Package, MessageCircle } from 'lucide-react'
-import { useRFQ, useQuotationsForRFQ } from '@/hooks/useRFQ'
+import { Link, useParams, useNavigate } from '@tanstack/react-router'
+import { ArrowLeft, Edit, Plus, FileText, Building, User, Calendar, Package, MessageCircle, Upload } from 'lucide-react'
+import { useRFQ, useQuotationsForRFQ, useCreateFullQuotation, useCurrencies } from '@/hooks/useRFQ'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Header } from '@/components/layout/header'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { toast } from 'sonner'
 import {
   Table,
   TableBody,
@@ -15,7 +16,15 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { type RFQItem, type Quotation } from '@/lib/types'
+import { type RFQItem, type Quotation, type Currency } from '@/lib/types'
+import { AddRFQItemModal } from '@/components/modals/AddRFQItemModal'
+import { FileUpload } from '@/components/rfq/FileUpload'
+import { QuickQuotationRow } from '@/features/rfq/components/QuickQuotationRow'
+import { QuickQuotationModal } from '@/features/rfq/components/QuickQuotationModal'
+import { UltraRFQTable } from '@/features/rfq/components/UltraRFQTable'
+import { RFQKeyboardShortcuts } from '@/features/rfq/components/RFQKeyboardShortcuts'
+import { useQuotationProposals } from '@/hooks/useQuotationProposals'
+import { usePermissions } from '@/contexts/RoleContext'
 
 const statusColors = {
   draft: 'secondary',
@@ -49,8 +58,72 @@ const priorityLabels = {
 
 export function RFQDetailPage() {
   const { rfqId } = useParams({ from: '/_authenticated/rfq/$rfqId' })
+  const navigate = useNavigate()
   const { data: rfq, isLoading, error } = useRFQ(rfqId)
   const { data: quotations } = useQuotationsForRFQ(rfqId)
+  const { data: currencies = [] } = useCurrencies()
+  const createFullQuotation = useCreateFullQuotation()
+  const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false)
+  const [isQuickQuotationModalOpen, setIsQuickQuotationModalOpen] = useState(false)
+  const [fileUploadState, setFileUploadState] = useState<{
+    open: boolean
+    rfqItemId?: number
+    files?: any[]
+  }>({ open: false })
+  const [selectedCurrency, setSelectedCurrency] = useState<Currency | null>(null)
+  const { canCreateQuotations, canEditRFQ } = usePermissions()
+  
+  // Хук для управления предложениями
+  const {
+    proposals,
+    addProposal,
+    updateProposal,
+    removeProposal,
+    getProposalsForItem,
+    getTotalProposalsCount,
+    clearAllProposals,
+    exportProposals
+  } = useQuotationProposals()
+
+  // Вычисляем следующий номер строки для новой позиции
+  const getNextLineNumber = () => {
+    if (!rfq?.items?.length) return 1
+    const maxLineNumber = Math.max(...rfq.items.map(item => item.line_number))
+    return maxLineNumber + 1
+  }
+
+  // Быстрое создание котировки из предложений
+  const handleCreateQuotation = () => {
+    const proposals = exportProposals()
+    if (proposals.length === 0) {
+      toast.error('Добавьте хотя бы одно предложение для создания котировки')
+      return
+    }
+    setIsQuickQuotationModalOpen(true)
+  }
+
+  // Переход к полному созданию котировки
+  const handleFullCreateQuotation = () => {
+    navigate({
+      to: '/rfq/quotations/create',
+      search: { rfqId: rfqId.toString() }
+    })
+  }
+
+  // Создание полной котировки с предложениями
+  const handleQuickQuotationSubmit = async (quotationData: any, items: any[]) => {
+    try {
+      await createFullQuotation.mutateAsync({
+        quotation: quotationData,
+        items: items
+      })
+      
+      clearAllProposals()
+      navigate({ to: '/rfq/$rfqId', params: { rfqId } })
+    } catch (error) {
+      console.error('Ошибка создания котировки:', error)
+    }
+  }
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('ru-RU', {
@@ -94,40 +167,111 @@ export function RFQDetailPage() {
   return (
     <div className="flex flex-1 flex-col">
       <Header className="sticky top-0 z-10">
-        <div className="flex items-center gap-4">
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/rfq">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Назад к списку
-            </Link>
-          </Button>
+        {/* Десктопная версия */}
+        <div className="hidden md:flex items-center justify-between w-full">
+          <div className="flex items-center gap-4">
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/rfq">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Назад к списку
+              </Link>
+            </Button>
+            <div className="flex items-center gap-2">
+              <FileText className="h-6 w-6" />
+              <h1 className="text-xl font-semibold">{rfq.number}</h1>
+              <Badge variant={statusColors[rfq.status]}>
+                {statusLabels[rfq.status]}
+              </Badge>
+            </div>
+          </div>
           <div className="flex items-center gap-2">
-            <FileText className="h-6 w-6" />
-            <h1 className="text-xl font-semibold">{rfq.number}</h1>
-            <Badge variant={statusColors[rfq.status]}>
+            {canEditRFQ() && (
+              <Button variant="outline">
+                <Edit className="h-4 w-4 mr-2" />
+                Редактировать
+              </Button>
+            )}
+            {canCreateQuotations() && (
+              <Button variant="outline" onClick={handleCreateQuotation}>
+                <MessageCircle className="h-4 w-4 mr-2" />
+                Создать предложение
+              </Button>
+            )}
+            {canEditRFQ() && (
+              <Button onClick={() => setIsAddItemModalOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Добавить позицию
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Мобильная версия */}
+        <div className="flex md:hidden flex-col gap-3 w-full">
+          <div className="flex items-center justify-between">
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/rfq">
+                <ArrowLeft className="h-4 w-4" />
+              </Link>
+            </Button>
+            <Badge variant={statusColors[rfq.status]} className="text-xs">
               {statusLabels[rfq.status]}
             </Badge>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline">
-            <Edit className="h-4 w-4 mr-2" />
-            Редактировать
-          </Button>
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Добавить позицию
-          </Button>
+          
+          <div className="flex items-center gap-2">
+            <FileText className="h-5 w-5" />
+            <h1 className="text-lg font-semibold truncate">{rfq.number}</h1>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            {(canEditRFQ() || canCreateQuotations()) && (
+              <div className="flex items-center gap-2">
+                {canEditRFQ() && (
+                  <Button variant="outline" size="sm" className="flex-1">
+                    <Edit className="h-4 w-4 mr-2" />
+                    Редактировать
+                  </Button>
+                )}
+                {canEditRFQ() && (
+                  <Button onClick={() => setIsAddItemModalOpen(true)} size="sm" className="flex-1">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Добавить
+                  </Button>
+                )}
+                {!canEditRFQ() && canCreateQuotations() && (
+                  <Button onClick={handleCreateQuotation} size="sm" className="w-full">
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    Создать предложение
+                  </Button>
+                )}
+              </div>
+            )}
+            {canEditRFQ() && canCreateQuotations() && (
+              <Button onClick={handleCreateQuotation} size="sm" className="w-full">
+                <MessageCircle className="h-4 w-4 mr-2" />
+                Создать предложение
+              </Button>
+            )}
+          </div>
         </div>
       </Header>
 
-      <main className="flex-1 p-6">
-        <div className="space-y-6">
+      <main className="flex-1 p-4 md:p-6">
+        <div className="space-y-4 md:space-y-6">
+          {/* Горячие клавиши для быстрой работы */}
+          <RFQKeyboardShortcuts
+            onCreateQuotation={getTotalProposalsCount() > 0 ? handleCreateQuotation : undefined}
+            onAddItem={() => setIsAddItemModalOpen(true)}
+            onRefresh={() => window.location.reload()}
+            enabled={true}
+          />
+
           {/* Основная информация */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
             <Card className="lg:col-span-2">
-              <CardHeader>
-                <CardTitle>{rfq.title}</CardTitle>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg md:text-xl">{rfq.title}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {rfq.description && (
@@ -137,20 +281,20 @@ export function RFQDetailPage() {
                   </div>
                 )}
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                   <div>
-                    <h4 className="font-medium mb-2">Приоритет</h4>
-                    <Badge variant={priorityColors[rfq.priority]}>
+                    <h4 className="font-medium mb-2 text-sm">Приоритет</h4>
+                    <Badge variant={priorityColors[rfq.priority]} className="text-xs">
                       {priorityLabels[rfq.priority]}
                     </Badge>
                   </div>
                   
                   {rfq.deadline && (
                     <div>
-                      <h4 className="font-medium mb-2">Крайний срок</h4>
-                      <div className="flex items-center gap-2 text-sm">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                        {formatDate(rfq.deadline)}
+                      <h4 className="font-medium mb-2 text-sm">Крайний срок</h4>
+                      <div className="flex items-center gap-2 text-xs md:text-sm">
+                        <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <span className="break-all">{formatDate(rfq.deadline)}</span>
                       </div>
                     </div>
                   )}
@@ -189,121 +333,89 @@ export function RFQDetailPage() {
             </Card>
 
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-lg">
                   <Building className="h-5 w-5" />
-                  Информация о заказчике
+                  <span className="hidden sm:inline">Информация о заказчике</span>
+                  <span className="sm:hidden">Заказчик</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-3 md:space-y-4">
                 <div>
-                  <h4 className="font-medium mb-2">Компания</h4>
-                  <p className="text-muted-foreground">{rfq.company_name}</p>
+                  <h4 className="font-medium mb-2 text-sm">Компания</h4>
+                  <p className="text-muted-foreground text-sm break-words">{rfq.company_name}</p>
                 </div>
                 
                 {rfq.contact_person_name && (
                   <div>
-                    <h4 className="font-medium mb-2">Контактное лицо</h4>
+                    <h4 className="font-medium mb-2 text-sm">Контактное лицо</h4>
                     <div className="flex items-center gap-2">
-                      <User className="h-4 w-4 text-muted-foreground" />
-                      {rfq.contact_person_name}
+                      <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <span className="text-sm break-words">{rfq.contact_person_name}</span>
                     </div>
                   </div>
                 )}
 
                 {rfq.sales_manager_name && (
                   <div>
-                    <h4 className="font-medium mb-2">Sales менеджер</h4>
+                    <h4 className="font-medium mb-2 text-sm">Sales менеджер</h4>
                     <div className="flex items-center gap-2">
-                      <User className="h-4 w-4 text-muted-foreground" />
-                      {rfq.sales_manager_name}
+                      <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <span className="text-sm break-words">{rfq.sales_manager_name}</span>
                     </div>
                   </div>
                 )}
 
-                <div className="space-y-2 text-sm text-muted-foreground">
-                  <div>Создан: {formatDate(rfq.created_at)}</div>
-                  <div>Обновлен: {formatDate(rfq.updated_at)}</div>
+                <div className="space-y-1 text-xs md:text-sm text-muted-foreground">
+                  <div className="break-all">Создан: {formatDate(rfq.created_at)}</div>
+                  <div className="break-all">Обновлен: {formatDate(rfq.updated_at)}</div>
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Табы с позициями и предложениями */}
-          <Tabs defaultValue="items" className="w-full">
-            <TabsList>
-              <TabsTrigger value="items" className="flex items-center gap-2">
-                <Package className="h-4 w-4" />
-                Позиции ({rfq.items?.length || 0})
-              </TabsTrigger>
-              <TabsTrigger value="quotations" className="flex items-center gap-2">
+          {/* Ультра-эргономичная таблица для работы с ценами */}
+          <UltraRFQTable
+            rfqItems={rfq.items || []}
+            proposals={proposals}
+            currencies={currencies}
+            selectedCurrency={selectedCurrency}
+            onCurrencyChange={setSelectedCurrency}
+            onAddProposal={addProposal}
+            onUpdateProposal={updateProposal}
+            onRemoveProposal={removeProposal}
+            onCreateQuotation={handleCreateQuotation}
+            isLoading={false}
+          />
+
+          {/* Табы с дополнительной информацией */}
+          <Tabs defaultValue="quotations" className="w-full">
+            <TabsList className="grid w-full grid-cols-1">
+              <TabsTrigger value="quotations" className="flex items-center gap-1 md:gap-2 text-xs md:text-sm">
                 <MessageCircle className="h-4 w-4" />
-                Предложения ({quotations?.length || 0})
+                <span className="hidden sm:inline">История котировок</span>
+                <span className="sm:hidden">Котировки</span>
+                ({quotations?.length || 0})
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="items" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Позиции RFQ</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {!rfq.items?.length ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      Позиции не добавлены
-                    </div>
-                  ) : (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>№</TableHead>
-                          <TableHead>Товар</TableHead>
-                          <TableHead>Производитель</TableHead>
-                          <TableHead>Артикул</TableHead>
-                          <TableHead>Количество</TableHead>
-                          <TableHead>Ед. изм.</TableHead>
-                          <TableHead>Файлы</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {rfq.items.map((item: RFQItem) => (
-                          <TableRow key={item.id}>
-                            <TableCell>{item.line_number}</TableCell>
-                            <TableCell>
-                              <div className="font-medium">{item.product_name_display}</div>
-                              {item.specifications && (
-                                <div className="text-sm text-muted-foreground truncate max-w-xs">
-                                  {item.specifications}
-                                </div>
-                              )}
-                            </TableCell>
-                            <TableCell>{item.manufacturer || '—'}</TableCell>
-                            <TableCell>{item.part_number || '—'}</TableCell>
-                            <TableCell>{item.quantity}</TableCell>
-                            <TableCell>{item.unit}</TableCell>
-                            <TableCell>
-                              {item.files?.length ? (
-                                <Badge variant="outline">{item.files.length}</Badge>
-                              ) : (
-                                '—'
-                              )}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
+
 
             <TabsContent value="quotations" className="space-y-4">
               <Card>
                 <CardHeader>
-                  <CardTitle>Предложения</CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle>Котировки</CardTitle>
+                    {canCreateQuotations() && (
+                      <Button onClick={handleFullCreateQuotation} size="sm">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Создать котировку
+                      </Button>
+                    )}
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  {!quotations?.length ? (
+                  {!quotations?.length || !Array.isArray(quotations) ? (
                     <div className="text-center py-8 text-muted-foreground">
                       Предложения не найдены
                     </div>
@@ -327,12 +439,12 @@ export function RFQDetailPage() {
                               </div>
                               <div>
                                 <span className="text-muted-foreground">Валюта:</span>
-                                <div>{quotation.currency_details.code}</div>
+                                <div>{quotation.currency_details?.code || '—'}</div>
                               </div>
                               <div>
                                 <span className="text-muted-foreground">Сумма:</span>
                                 <div className="font-medium">
-                                  {quotation.total_amount} {quotation.currency_details.symbol}
+                                  {quotation.total_amount} {quotation.currency_details?.symbol || ''}
                                 </div>
                               </div>
                             </div>
@@ -351,6 +463,35 @@ export function RFQDetailPage() {
           </Tabs>
         </div>
       </main>
+
+      {/* Модальное окно для добавления позиции */}
+      <AddRFQItemModal
+        open={isAddItemModalOpen}
+        onOpenChange={setIsAddItemModalOpen}
+        rfqId={rfqId}
+        nextLineNumber={getNextLineNumber()}
+      />
+
+      {/* Модальное окно для загрузки файлов */}
+      {fileUploadState.rfqItemId && (
+        <FileUpload
+          rfqItemId={fileUploadState.rfqItemId}
+          files={fileUploadState.files || []}
+          open={fileUploadState.open}
+          onOpenChange={(open) => setFileUploadState(prev => ({ ...prev, open }))}
+        />
+      )}
+
+      {/* Модальное окно для быстрого создания котировки */}
+      <QuickQuotationModal
+        open={isQuickQuotationModalOpen}
+        onOpenChange={setIsQuickQuotationModalOpen}
+        rfq={rfq}
+        proposals={exportProposals()}
+        currencies={currencies}
+        onSubmit={handleQuickQuotationSubmit}
+        isLoading={createFullQuotation.isPending}
+      />
     </div>
   )
 } 

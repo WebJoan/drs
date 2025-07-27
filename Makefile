@@ -51,6 +51,9 @@ backend.quality:
 backend.shell:
 	@$(MAKE) -s _manage_py cmd=shell
 
+backend.create_currencies:
+	@$(MAKE) -s _manage_py cmd=create_currencies	
+
 backend.test:
 	@$(MAKE) -s _manage_py cmd=test env_file='.env.test' opts="--parallel"
 

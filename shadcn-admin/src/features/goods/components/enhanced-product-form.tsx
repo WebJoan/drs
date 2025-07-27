@@ -18,6 +18,14 @@ import { useCurrentUser } from '@/hooks/useAuth'
 import { SearchableSelect } from './SearchableSelect'
 import { cn } from '@/lib/utils'
 import { 
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet'
+import { 
   Dialog,
   DialogContent,
   DialogDescription,
@@ -141,112 +149,119 @@ export function EnhancedProductForm({ open, onOpenChange, onSuccess }: EnhancedP
 
   return (
     <>
-      <Dialog open={open} onOpenChange={handleCloseDialog}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Создать новый товар</DialogTitle>
-            <DialogDescription>
+      <Sheet open={open} onOpenChange={handleCloseDialog}>
+        <SheetContent className="w-full sm:w-[500px] sm:max-w-[540px] flex flex-col h-full" side="right">
+          <SheetHeader className="space-y-3 pb-4 border-b">
+            <SheetTitle>Создать новый товар</SheetTitle>
+            <SheetDescription>
               Заполните форму для создания нового товара. Менеджер автоматически назначится на вас.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid gap-6 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="name" className="text-sm font-medium">
-                  Название товара *
-                </Label>
-                <Input
-                  id="name"
-                  {...register('name')}
-                  placeholder="Введите название товара"
-                  className={cn(errors.name && 'border-red-500')}
-                />
-                {errors.name && (
-                  <p className="text-sm text-red-500">{errors.name.message}</p>
+            </SheetDescription>
+          </SheetHeader>
+          
+          <div className="flex-1 overflow-y-auto">
+            <form onSubmit={handleSubmit(onSubmit)} className="h-full flex flex-col">
+              <div className="flex-1 space-y-6 p-6">
+                <div className="space-y-2">
+                  <Label htmlFor="name" className="text-sm font-medium">
+                    Название товара *
+                  </Label>
+                  <Input
+                    id="name"
+                    {...register('name')}
+                    placeholder="Введите название товара"
+                    className={cn(errors.name && 'border-red-500')}
+                  />
+                  {errors.name && (
+                    <p className="text-sm text-red-500">{errors.name.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <SearchableSelect
+                    label="Подгруппа"
+                    items={subgroups || []}
+                    value={watchedSubgroupId}
+                    onValueChange={(value) => setValue('subgroup_id', value)}
+                    placeholder="Выберите подгруппу"
+                    searchPlaceholder="Поиск подгруппы..."
+                    emptyText="Подгруппы не найдены"
+                    required
+                    error={errors.subgroup_id?.message}
+                    renderItem={(item) => (
+                      <div>
+                        <span className="font-medium">{item.name}</span>
+                        {item.group && (
+                          <span className="text-sm text-muted-foreground ml-2">
+                            ({item.group.name})
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsCreatingSubgroup(true)}
+                    className="w-full"
+                  >
+                    Создать новую подгруппу
+                  </Button>
+                </div>
+
+                <div className="space-y-2">
+                  <SearchableSelect
+                    label="Бренд"
+                    items={brands || []}
+                    value={watchedBrandId}
+                    onValueChange={(value) => setValue('brand_id', value)}
+                    placeholder="Выберите бренд (опционально)"
+                    searchPlaceholder="Поиск бренда..."
+                    emptyText="Бренды не найдены"
+                    onCreateNew={handleCreateBrand}
+                    createNewLabel="Создать новый бренд"
+                  />
+                </div>
+
+                {currentUser && (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Менеджер</Label>
+                    <div className="p-3 bg-muted rounded-md">
+                      <p className="text-sm text-muted-foreground">
+                        Автоматически назначен: <strong>{currentUser.first_name} {currentUser.last_name}</strong>
+                      </p>
+                    </div>
+                  </div>
                 )}
               </div>
 
-              <div className="space-y-2">
-                <SearchableSelect
-                  label="Подгруппа"
-                  items={subgroups || []}
-                  value={watchedSubgroupId}
-                  onValueChange={(value) => setValue('subgroup_id', value)}
-                  placeholder="Выберите подгруппу"
-                  searchPlaceholder="Поиск подгруппы..."
-                  emptyText="Подгруппы не найдены"
-                  required
-                  error={errors.subgroup_id?.message}
-                  renderItem={(item) => (
-                    <div>
-                      <span className="font-medium">{item.name}</span>
-                      {item.group && (
-                        <span className="text-sm text-muted-foreground ml-2">
-                          ({item.group.name})
-                        </span>
-                      )}
-                    </div>
-                  )}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsCreatingSubgroup(true)}
-                  className="w-full"
-                >
-                  Создать новую подгруппу
-                </Button>
-              </div>
-
-              <div className="space-y-2">
-                <SearchableSelect
-                  label="Бренд"
-                  items={brands || []}
-                  value={watchedBrandId}
-                  onValueChange={(value) => setValue('brand_id', value)}
-                  placeholder="Выберите бренд (опционально)"
-                  searchPlaceholder="Поиск бренда..."
-                  emptyText="Бренды не найдены"
-                  onCreateNew={handleCreateBrand}
-                  createNewLabel="Создать новый бренд"
-                />
-              </div>
-
-              {currentUser && (
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Менеджер</Label>
-                  <div className="p-3 bg-muted rounded-md">
-                    <p className="text-sm text-muted-foreground">
-                      Автоматически назначен: <strong>{currentUser.first_name} {currentUser.last_name}</strong>
-                    </p>
-                  </div>
+              <SheetFooter className="p-6 pt-4 border-t bg-background">
+                <div className="flex flex-col sm:flex-row gap-3 w-full">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleCloseDialog}
+                    className="flex-1 sm:flex-none"
+                  >
+                    Отмена
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={createProductMutation.isPending}
+                    className="flex-1 sm:flex-none"
+                  >
+                    {createProductMutation.isPending ? 'Создание...' : 'Создать товар'}
+                  </Button>
                 </div>
-              )}
-            </div>
-
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleCloseDialog}
-              >
-                Отмена
-              </Button>
-              <Button
-                type="submit"
-                disabled={createProductMutation.isPending}
-              >
-                {createProductMutation.isPending ? 'Создание...' : 'Создать товар'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+              </SheetFooter>
+            </form>
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* Диалог создания новой подгруппы */}
       <Dialog open={isCreatingSubgroup} onOpenChange={setIsCreatingSubgroup}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[425px] mx-4">
           <DialogHeader>
             <DialogTitle>Создать новую подгруппу</DialogTitle>
             <DialogDescription>
@@ -283,11 +298,12 @@ export function EnhancedProductForm({ open, onOpenChange, onSuccess }: EnhancedP
               />
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex-col sm:flex-row gap-3">
             <Button
               type="button"
               variant="outline"
               onClick={() => setIsCreatingSubgroup(false)}
+              className="w-full sm:w-auto"
             >
               Отмена
             </Button>
@@ -295,6 +311,7 @@ export function EnhancedProductForm({ open, onOpenChange, onSuccess }: EnhancedP
               type="button"
               onClick={handleCreateSubgroup}
               disabled={!newSubgroupName.trim() || typeof newSubgroupGroupId !== 'number' || createSubgroupMutation.isPending}
+              className="w-full sm:w-auto"
             >
               {createSubgroupMutation.isPending ? 'Создание...' : 'Создать'}
             </Button>

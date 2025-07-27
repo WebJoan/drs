@@ -1,34 +1,75 @@
-import { useState } from 'react'
-import { Search, Filter, ShoppingCart, Package, Info } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { ShoppingCart, Package, Loader2, AlertCircle } from 'lucide-react'
 import { useProducts } from '@/hooks/useProducts'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Header } from '@/components/layout/header'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
-import { type Product } from '@/lib/types'
+import { UniversalDataTable } from '@/components/ui/universal-data-table'
+import { columns } from '../components/product-catalog-columns'
 
 export function ProductCatalogPage() {
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(20)
   const [search, setSearch] = useState('')
-  const pageSize = 20
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [showSearchLoader, setShowSearchLoader] = useState(false)
 
-  const { data, isLoading, error } = useProducts(page, pageSize, search)
+  // Дебаунс для поиска
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search)
+    }, 300)
+
+    return () => clearTimeout(timer)
+  }, [search])
+
+  const { data, isLoading, error, refetch, isRefetching } = useProducts(page, pageSize, debouncedSearch)
+
+  // Управление индикатором загрузки поиска
+  useEffect(() => {
+    if (isRefetching && debouncedSearch) {
+      const timer = setTimeout(() => {
+        setShowSearchLoader(true)
+      }, 100)
+
+      return () => clearTimeout(timer)
+    } else {
+      setShowSearchLoader(false)
+    }
+  }, [isRefetching, debouncedSearch])
+
+  // Показываем полноэкранный спиннер только при первоначальной загрузке без данных
+  if (isLoading && !data) {
+    return (
+      <div className='flex items-center justify-center h-screen'>
+        <div className='text-center'>
+          <Loader2 className='h-12 w-12 animate-spin mx-auto mb-4 text-primary' />
+          <h2 className='text-lg font-semibold mb-2'>Загрузка каталога товаров...</h2>
+          <p className='text-sm text-muted-foreground'>
+            Пожалуйста, подождите, данные загружаются
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className='flex items-center justify-center h-screen'>
+        <div className='text-center max-w-md'>
+          <AlertCircle className='h-12 w-12 mx-auto mb-4 text-destructive' />
+          <h2 className='text-xl font-bold text-destructive mb-2'>Ошибка загрузки</h2>
+          <p className='text-muted-foreground mb-4'>
+            {error.message || 'Не удалось загрузить каталог товаров. Проверьте подключение к интернету и попробуйте снова.'}
+          </p>
+          <Button onClick={() => refetch()} variant='outline' className='gap-2'>
+            <AlertCircle className='h-4 w-4' />
+            Повторить попытку
+          </Button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-1 flex-col">
@@ -43,185 +84,77 @@ export function ProductCatalogPage() {
 
       <main className="flex-1 p-6">
         <div className="space-y-6">
-          {/* Фильтры и поиск */}
+          {/* Информация о каталоге */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Поиск товаров</CardTitle>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Package className="h-5 w-5" />
+                Каталог товаров
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center gap-4">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Поиск по названию, бренду, артикулу..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                <Button variant="outline">
-                  <Filter className="h-4 w-4 mr-2" />
-                  Фильтры
-                </Button>
-              </div>
+              <p className="text-muted-foreground">
+                {data?.results?.length ? (
+                  `Найдено ${data.count} товаров (показано ${data.results.length} из ${data.count})`
+                ) : (
+                  'Просматривайте и ищите товары в каталоге'
+                )}
+              </p>
             </CardContent>
           </Card>
 
           {/* Таблица товаров */}
           <Card>
-            <CardHeader>
-              <CardTitle>
-                Товары {data && `(${data.count})`}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                </div>
-              ) : error ? (
-                <div className="text-center py-8 text-destructive">
-                  Ошибка загрузки: {error.message}
-                </div>
-              ) : !data?.results?.length ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  Товары не найдены
-                </div>
+            <CardContent className="p-6">
+              {data?.results && data.results.length > 0 ? (
+                <UniversalDataTable 
+                  data={data.results} 
+                  columns={columns}
+                  enableRowSelection={false}
+                  enableSorting={true}
+                  enableColumnVisibility={true}
+                  enableFiltering={true}
+                  pagination={{ 
+                    type: 'external',
+                    config: {
+                      page,
+                      pageSize,
+                      total: data.count,
+                      totalPages: data.total_pages,
+                      onPageChange: (newPage: number) => {
+                        setPage(newPage)
+                      },
+                      onPageSizeChange: (newPageSize: number) => {
+                        setPageSize(newPageSize)
+                        setPage(1)
+                      }
+                    },
+                    showRowsSelected: false
+                  }}
+                  search={{
+                    enabled: true,
+                    placeholder: 'Поиск по названию, бренду, артикулу...',
+                    value: search,
+                    onChange: (value: string) => {
+                      setSearch(value)
+                      setPage(1)
+                    },
+                    isSearching: showSearchLoader
+                  }}
+                  emptyMessage="Товары не найдены."
+                />
               ) : (
-                <div className="space-y-4">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Название</TableHead>
-                        <TableHead>Бренд</TableHead>
-                        <TableHead>Подгруппа</TableHead>
-                        <TableHead>Product менеджер</TableHead>
-                        <TableHead>Действия</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {data.results.map((product: Product) => (
-                        <TableRow key={product.id}>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <Package className="h-4 w-4 text-muted-foreground" />
-                              <div>
-                                <div className="font-medium">{product.name}</div>
-                                <div className="text-sm text-muted-foreground">
-                                  ID: {product.id}
-                                </div>
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {product.brand ? (
-                              <Badge variant="outline">{product.brand.name}</Badge>
-                            ) : (
-                              <span className="text-muted-foreground">—</span>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <div>
-                              <div className="font-medium">{product.subgroup.name}</div>
-                              <div className="text-sm text-muted-foreground">
-                                {product.subgroup.group.name}
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {product.product_manager ? (
-                              <div className="text-sm">
-                                {product.product_manager.first_name} {product.product_manager.last_name}
-                              </div>
-                            ) : (
-                              <span className="text-muted-foreground">—</span>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <Dialog>
-                              <DialogTrigger asChild>
-                                <Button variant="outline" size="sm">
-                                  <Info className="h-4 w-4 mr-2" />
-                                  Подробнее
-                                </Button>
-                              </DialogTrigger>
-                              <DialogContent className="max-w-2xl">
-                                <DialogHeader>
-                                  <DialogTitle>{product.name}</DialogTitle>
-                                </DialogHeader>
-                                <div className="space-y-4">
-                                  <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                      <h4 className="font-medium mb-2">Основная информация</h4>
-                                      <div className="space-y-2 text-sm">
-                                        <div><span className="font-medium">ID:</span> {product.id}</div>
-                                        <div><span className="font-medium">Название:</span> {product.name}</div>
-                                        <div><span className="font-medium">Ext ID:</span> {product.ext_id}</div>
-                                      </div>
-                                    </div>
-                                    <div>
-                                      <h4 className="font-medium mb-2">Категория</h4>
-                                      <div className="space-y-2 text-sm">
-                                        <div><span className="font-medium">Группа:</span> {product.subgroup.group.name}</div>
-                                        <div><span className="font-medium">Подгруппа:</span> {product.subgroup.name}</div>
-                                        <div><span className="font-medium">Бренд:</span> {product.brand?.name || '—'}</div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                  <div>
-                                    <h4 className="font-medium mb-2">Ответственные</h4>
-                                    <div className="space-y-2 text-sm">
-                                      <div>
-                                        <span className="font-medium">Product менеджер:</span>{' '}
-                                        {product.product_manager ? 
-                                          `${product.product_manager.first_name} ${product.product_manager.last_name}` : 
-                                          '—'
-                                        }
-                                      </div>
-                                      <div>
-                                        <span className="font-medium">Ответственный менеджер:</span>{' '}
-                                        {product.responsible_manager ? 
-                                          `${product.responsible_manager.first_name} ${product.responsible_manager.last_name}` : 
-                                          '—'
-                                        }
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              </DialogContent>
-                            </Dialog>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-
-                  {/* Пагинация */}
-                  {data.total_pages > 1 && (
-                    <div className="flex items-center justify-between">
-                      <div className="text-sm text-muted-foreground">
-                        Показано {((page - 1) * pageSize) + 1}-{Math.min(page * pageSize, data.count)} из {data.count}
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={!data.previous}
-                          onClick={() => setPage(page - 1)}
-                        >
-                          Назад
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={!data.next}
-                          onClick={() => setPage(page + 1)}
-                        >
-                          Далее
-                        </Button>
-                      </div>
-                    </div>
-                  )}
+                <div className='flex flex-col items-center justify-center py-12 text-center'>
+                  <Package className='h-12 w-12 text-muted-foreground mb-4' />
+                  <h3 className='text-lg font-semibold mb-2'>
+                    {search ? 'Товары не найдены' : 'Нет товаров'}
+                  </h3>
+                  <p className='text-muted-foreground mb-4 max-w-sm'>
+                    {search 
+                      ? `По запросу "${search}" товары не найдены. Попробуйте изменить поисковый запрос.`
+                      : 'Товары не найдены в каталоге.'
+                    }
+                  </p>
                 </div>
               )}
             </CardContent>

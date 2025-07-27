@@ -15,3 +15,14 @@ class ExtIdMixin(models.Model):
 
     class Meta:
         abstract = True
+
+
+class TimestampsMixin(models.Model):
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name=_('Дата создания'),
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name=_('Дата обновления'),
+    )

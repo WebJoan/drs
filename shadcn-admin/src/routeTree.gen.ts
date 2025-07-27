@@ -37,6 +37,7 @@ import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_auth
 import { Route as AuthenticatedRfqQuotationsRouteImport } from './routes/_authenticated/rfq/quotations'
 import { Route as AuthenticatedRfqCreateRouteImport } from './routes/_authenticated/rfq/create'
 import { Route as AuthenticatedRfqRfqIdRouteImport } from './routes/_authenticated/rfq/$rfqId'
+import { Route as AuthenticatedRfqQuotationsCreateRouteImport } from './routes/_authenticated/rfq/quotations/create'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
@@ -186,6 +187,12 @@ const AuthenticatedRfqRfqIdRoute = AuthenticatedRfqRfqIdRouteImport.update({
   path: '/rfq/$rfqId',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedRfqQuotationsCreateRoute =
+  AuthenticatedRfqQuotationsCreateRouteImport.update({
+    id: '/create',
+    path: '/create',
+    getParentRoute: () => AuthenticatedRfqQuotationsRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
@@ -202,7 +209,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/rfq/$rfqId': typeof AuthenticatedRfqRfqIdRoute
   '/rfq/create': typeof AuthenticatedRfqCreateRoute
-  '/rfq/quotations': typeof AuthenticatedRfqQuotationsRoute
+  '/rfq/quotations': typeof AuthenticatedRfqQuotationsRouteWithChildren
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayRoute
@@ -215,6 +222,7 @@ export interface FileRoutesByFullPath {
   '/rfq': typeof AuthenticatedRfqIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
+  '/rfq/quotations/create': typeof AuthenticatedRfqQuotationsCreateRoute
 }
 export interface FileRoutesByTo {
   '/forgot-password': typeof authForgotPasswordRoute
@@ -230,7 +238,7 @@ export interface FileRoutesByTo {
   '/': typeof AuthenticatedIndexRoute
   '/rfq/$rfqId': typeof AuthenticatedRfqRfqIdRoute
   '/rfq/create': typeof AuthenticatedRfqCreateRoute
-  '/rfq/quotations': typeof AuthenticatedRfqQuotationsRoute
+  '/rfq/quotations': typeof AuthenticatedRfqQuotationsRouteWithChildren
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayRoute
@@ -243,6 +251,7 @@ export interface FileRoutesByTo {
   '/rfq': typeof AuthenticatedRfqIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
+  '/rfq/quotations/create': typeof AuthenticatedRfqQuotationsCreateRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -261,7 +270,7 @@ export interface FileRoutesById {
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/rfq/$rfqId': typeof AuthenticatedRfqRfqIdRoute
   '/_authenticated/rfq/create': typeof AuthenticatedRfqCreateRoute
-  '/_authenticated/rfq/quotations': typeof AuthenticatedRfqQuotationsRoute
+  '/_authenticated/rfq/quotations': typeof AuthenticatedRfqQuotationsRouteWithChildren
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/_authenticated/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/_authenticated/settings/display': typeof AuthenticatedSettingsDisplayRoute
@@ -274,6 +283,7 @@ export interface FileRoutesById {
   '/_authenticated/rfq/': typeof AuthenticatedRfqIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
+  '/_authenticated/rfq/quotations/create': typeof AuthenticatedRfqQuotationsCreateRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -305,6 +315,7 @@ export interface FileRouteTypes {
     | '/rfq'
     | '/settings/'
     | '/users'
+    | '/rfq/quotations/create'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/forgot-password'
@@ -333,6 +344,7 @@ export interface FileRouteTypes {
     | '/rfq'
     | '/settings'
     | '/users'
+    | '/rfq/quotations/create'
   id:
     | '__root__'
     | '/_authenticated'
@@ -363,6 +375,7 @@ export interface FileRouteTypes {
     | '/_authenticated/rfq/'
     | '/_authenticated/settings/'
     | '/_authenticated/users/'
+    | '/_authenticated/rfq/quotations/create'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -577,6 +590,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRfqRfqIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/rfq/quotations/create': {
+      id: '/_authenticated/rfq/quotations/create'
+      path: '/create'
+      fullPath: '/rfq/quotations/create'
+      preLoaderRoute: typeof AuthenticatedRfqQuotationsCreateRouteImport
+      parentRoute: typeof AuthenticatedRfqQuotationsRoute
+    }
   }
 }
 
@@ -603,12 +623,27 @@ const AuthenticatedSettingsRouteRouteWithChildren =
     AuthenticatedSettingsRouteRouteChildren,
   )
 
+interface AuthenticatedRfqQuotationsRouteChildren {
+  AuthenticatedRfqQuotationsCreateRoute: typeof AuthenticatedRfqQuotationsCreateRoute
+}
+
+const AuthenticatedRfqQuotationsRouteChildren: AuthenticatedRfqQuotationsRouteChildren =
+  {
+    AuthenticatedRfqQuotationsCreateRoute:
+      AuthenticatedRfqQuotationsCreateRoute,
+  }
+
+const AuthenticatedRfqQuotationsRouteWithChildren =
+  AuthenticatedRfqQuotationsRoute._addFileChildren(
+    AuthenticatedRfqQuotationsRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedRfqRfqIdRoute: typeof AuthenticatedRfqRfqIdRoute
   AuthenticatedRfqCreateRoute: typeof AuthenticatedRfqCreateRoute
-  AuthenticatedRfqQuotationsRoute: typeof AuthenticatedRfqQuotationsRoute
+  AuthenticatedRfqQuotationsRoute: typeof AuthenticatedRfqQuotationsRouteWithChildren
   AuthenticatedAppsIndexRoute: typeof AuthenticatedAppsIndexRoute
   AuthenticatedChatsIndexRoute: typeof AuthenticatedChatsIndexRoute
   AuthenticatedCustomersIndexRoute: typeof AuthenticatedCustomersIndexRoute
@@ -623,7 +658,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedRfqRfqIdRoute: AuthenticatedRfqRfqIdRoute,
   AuthenticatedRfqCreateRoute: AuthenticatedRfqCreateRoute,
-  AuthenticatedRfqQuotationsRoute: AuthenticatedRfqQuotationsRoute,
+  AuthenticatedRfqQuotationsRoute: AuthenticatedRfqQuotationsRouteWithChildren,
   AuthenticatedAppsIndexRoute: AuthenticatedAppsIndexRoute,
   AuthenticatedChatsIndexRoute: AuthenticatedChatsIndexRoute,
   AuthenticatedCustomersIndexRoute: AuthenticatedCustomersIndexRoute,

@@ -226,9 +226,13 @@ export interface RFQItem {
   files: RFQItemFile[]
   created_at: string
   product_name_display: string
+  manufacturer_display: string
+  part_number_display: string
+  product_code: string
   product_details?: {
     id: number
     name: string
+    ext_id?: string
     subgroup: string
     brand?: string
     manager?: string
@@ -336,6 +340,7 @@ export interface CreateRFQData {
 }
 
 export interface CreateRFQItemData {
+  rfq?: number // ID RFQ - будет добавлен автоматически в хуке
   line_number: number
   product?: number
   product_name: string

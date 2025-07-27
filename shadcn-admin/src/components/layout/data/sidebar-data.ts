@@ -313,6 +313,16 @@ export const roleNavGroups = {
           icon: IconShoppingCart,
         },
         {
+          title: 'Запросы цен (RFQ)',
+          url: '/rfq',
+          icon: IconFileText,
+        },
+        {
+          title: 'Мои предложения',
+          url: '/rfq/quotations',
+          icon: IconClipboardList,
+        },
+        {
           title: 'Чаты',
           url: '/chats',
           badge: '3',

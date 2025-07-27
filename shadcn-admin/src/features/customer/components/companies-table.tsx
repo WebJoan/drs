@@ -30,6 +30,8 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Building2, Users, Phone, Mail, ChevronDown, Search, Loader2 } from 'lucide-react'
 import { DataTablePagination as CommonPagination } from '@/components/ui/data-table-pagination'
+import { usePermissions } from '@/contexts/RoleContext'
+import { useCompaniesContext } from '../context/companies-context'
 import type { Company } from '../types'
 
 interface CompaniesTableProps {
@@ -53,8 +55,8 @@ interface CompaniesTableProps {
   onColumnVisibilityChange?: (visibility: any) => void
 }
 
-export const columns: ColumnDef<Company>[] = [
-  {
+export const createColumns = (canDelete: boolean): ColumnDef<Company>[] => [
+  ...(canDelete ? [{
     id: 'select',
     header: ({ table }) => (
       <Checkbox
@@ -72,7 +74,7 @@ export const columns: ColumnDef<Company>[] = [
     ),
     enableSorting: false,
     enableHiding: false,
-  },
+  }] : []),
   {
     accessorKey: 'name',
     header: 'Название компании',
@@ -205,6 +207,11 @@ export function CompaniesTable({
   columnVisibility: externalColumnVisibility,
   onColumnVisibilityChange
 }: CompaniesTableProps) {
+  const { canDeleteCompanies } = usePermissions()
+  const { setCompaniesToDelete, setIsDeleteMultipleDialogOpen } = useCompaniesContext()
+  const canDelete = canDeleteCompanies()
+  const columns = createColumns(canDelete)
+
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(externalColumnVisibility || {})
@@ -228,6 +235,13 @@ export function CompaniesTable({
       rowSelection,
     },
   })
+
+  const handleDeleteSelected = () => {
+    const selectedRows = table.getFilteredSelectedRowModel().rows
+    const selectedCompanies = selectedRows.map(row => row.original)
+    setCompaniesToDelete(selectedCompanies)
+    setIsDeleteMultipleDialogOpen(true)
+  }
 
   // Передаём экземпляр таблицы наверх
   useEffect(() => {
@@ -278,10 +292,11 @@ export function CompaniesTable({
           </div>
         )}
         <div className="flex items-center space-x-2 ml-auto">
-          {table.getFilteredSelectedRowModel().rows.length > 0 && (
+          {canDelete && table.getFilteredSelectedRowModel().rows.length > 0 && (
             <Button
               variant="destructive"
               size="sm"
+              onClick={handleDeleteSelected}
               className="h-8"
             >
               Удалить выбранные ({table.getFilteredSelectedRowModel().rows.length})
