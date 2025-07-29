@@ -12,8 +12,9 @@ services:
       - rabbitmq
       - meilisearch
     user: "0:0"  # Run as root
-    networks:
-      - django_react_starter_network
+    #networks:
+    #  - django_react_starter_network
+    network_mode: host
     ports:
       - "8000:8000"
     volumes:
@@ -21,6 +22,7 @@ services:
       - ./logs:/home/app/logs
     profiles:
       - all
+    
 
   front:
     image: node:22.14.0-slim
@@ -30,8 +32,9 @@ services:
     environment:
       - NODE_ENV=development
       - DOCKER_ENV=true
-    networks:
-      - django_react_starter_network
+    #networks:
+    #  - django_react_starter_network
+    network_mode: host
     ports:
       - "5173:5173"
     volumes:
@@ -46,8 +49,9 @@ services:
       - POSTGRES_USER=django_react_starter
       - POSTGRES_PASSWORD=django_react_starter
       - POSTGRES_DB=django_react_starter
-    networks:
-      - django_react_starter_network
+    #networks:
+    #  - django_react_starter_network
+    network_mode: host
     ports:
       - "5432:5432"
     volumes:
@@ -62,8 +66,9 @@ services:
     environment:
       - RABBITMQ_DEFAULT_USER=django_react_starter
       - RABBITMQ_DEFAULT_PASS=django_react_starter
-    networks:
-      - django_react_starter_network
+    #networks:
+    #  - django_react_starter_network
+    network_mode: host
     ports:
       - "15672:15672"
       - "5672:5672"
@@ -78,8 +83,9 @@ services:
     image: getmeili/meilisearch:v1.13.3
     environment:
       - MEILI_MASTER_KEY=@7t^a5xfv%9cg-oemhm0pi&fe6b=i7_v%dlikah^%0=z(hgqre
-    networks:
-      - django_react_starter_network
+    #networks:
+    #  - django_react_starter_network
+    network_mode: host
     ports:
       - "7700:7700"
     volumes:
@@ -93,8 +99,9 @@ services:
     image: riccoxie/meilisearch-ui:v0.11.5
     depends_on:
       - meilisearch
-    networks:
-      - django_react_starter_network
+    #networks:
+    #  - django_react_starter_network
+    network_mode: host
     ports:
       - "24900:24900"
     profiles:
