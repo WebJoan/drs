@@ -22,5 +22,5 @@ node_modules/
 backend/.env.prod
 certbot/
 nginx/conf.d/
-nginx/ssl/
+nginx/certs/
 frontend/dist/

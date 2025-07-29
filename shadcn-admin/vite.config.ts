@@ -22,6 +22,8 @@ export default defineConfig({
     host: isDocker ? '0.0.0.0' : 'localhost',
     port: 5173,
     strictPort: true,
+    // Разрешенные хосты для dev сервера
+    allowedHosts: ['jiman.ru'],
     // Дополнительные настройки безопасности для dev сервера
     cors: {
       origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],

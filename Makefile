@@ -152,12 +152,11 @@ help:
 prod.setup:
 	@chmod +x scripts/setup-prod.sh
 	@chmod +x scripts/init-letsencrypt.sh
-	@chmod +x scripts/apply-nginx-ssl.sh
+	@chmod +x scripts/setup-certs.sh
 	@./scripts/setup-prod.sh
 
 prod.ssl:
 	@./scripts/init-letsencrypt.sh
-	@./scripts/apply-nginx-ssl.sh
 
 prod.build:
 	@docker compose -f docker-compose.prod.yml --env-file .env.prod build
@@ -201,3 +200,33 @@ prod.update:
 	@docker compose -f docker-compose.prod.yml --env-file .env.prod --profile build up front
 	@$(MAKE) -s prod.migrate
 	@$(MAKE) -s prod.restart
+
+# --------------------------------------------------
+# SSL Certificates Management
+# --------------------------------------------------
+
+setup.certs:
+	@echo "🔐 Настройка SSL сертификатов..."
+	@./scripts/setup-certs.sh
+
+init.letsencrypt:
+	@echo "🔐 Инициализация Let's Encrypt сертификатов..."
+	@./scripts/init-letsencrypt.sh
+
+renew.certs:
+	@echo "🔄 Обновление SSL сертификатов..."
+	@./scripts/renew-certs.sh
+
+# Команда для запуска с существующими Let's Encrypt сертификатами
+start.with.certs:
+	@echo "🚀 Запуск с настройкой SSL сертификатов..."
+	@echo "⚠️  Убедитесь что Let's Encrypt сертификаты уже получены (make init.letsencrypt)"
+	@$(MAKE) -s setup.certs
+	@$(MAKE) -s start
+
+# Команда для полной настройки Let's Encrypt (только для production)
+setup.production.ssl:
+	@echo "🔐 Настройка production SSL с Let's Encrypt..."
+	@echo "⚠️  Убедитесь что домен jiman.ru указывает на ваш сервер!"
+	@read -p "Продолжить? (y/N) " confirm && [ "$$confirm" = "y" ] || exit 1
+	@$(MAKE) -s init.letsencrypt

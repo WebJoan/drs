@@ -15,6 +15,7 @@ RUN apt-get update \
     openssh-client \
     procps \
     gdal-bin \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Create dir and user

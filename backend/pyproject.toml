@@ -21,6 +21,7 @@ dependencies = [
     "django-anymail[sendinblue]>=13.0",
     "mysql-connector-python",
     "django-soft-delete>=1.0.19",
+    "django-cors-headers>=4.4.0",
 ]
 
 # ------------------------------

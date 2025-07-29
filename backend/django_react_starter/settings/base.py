@@ -13,6 +13,15 @@ APP_VERSION = os.getenv("APP_VERSION", "")
 SESSION_COOKIE_NAME = f"{APP_NAME}-sessionid"
 CSRF_COOKIE_NAME = f"{APP_NAME}-csrftoken"
 CSRF_COOKIE_HTTPONLY = False  # Allow JavaScript to read CSRF cookie for SPA
+CSRF_COOKIE_SAMESITE = 'Lax'  # Важно для SPA приложений
+CSRF_HEADER_NAME = 'HTTP_X_CSRFTOKEN'  # Заголовок для CSRF токена
+CSRF_USE_SESSIONS = False  # Используем куки вместо сессий для CSRF
+
+# --------------------------------------------------------------------------------
+# > CORS
+# --------------------------------------------------------------------------------
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_ALL_ORIGINS = False  # Отключаем для безопасности
 
 DEBUG = False
 SECRET_KEY = os.getenv("SECRET_KEY")
@@ -31,6 +40,7 @@ INSTALLED_APPS = [
     "drf_spectacular",
     "django_prometheus",
     "django_celery_results",
+    "corsheaders",
     # Custom
     "authentication",
     "core",
@@ -44,6 +54,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django_prometheus.middleware.PrometheusBeforeMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -180,7 +191,8 @@ REST_FRAMEWORK = {
 # --------------------------------------------------------------------------------
 MAX_SIZE = 1_000_000  # 1Mo
 BACKUP_COUNT = 2
-LOG_FOLDER = os.path.join(BASE_DIR, "logs")
+# Используем отдельную папку logs, которая монтируется через volume
+LOG_FOLDER = "/home/app/logs"
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
