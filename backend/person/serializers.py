@@ -2,6 +2,16 @@ from rest_framework import serializers
 from .models import Person
 
 
+class PersonSimpleSerializer(serializers.ModelSerializer):
+    """Простой сериализатор для базовой информации о контактном лице"""
+    
+    full_name = serializers.CharField(source='get_full_name', read_only=True)
+    
+    class Meta:
+        model = Person
+        fields = ['id', 'full_name', 'email', 'position']
+
+
 class PersonListSerializer(serializers.ModelSerializer):
     """Сериализатор для списка контактных лиц"""
     

@@ -29,6 +29,10 @@ urlpatterns = [
     path(f"{API_ROOT}/v1/customer/", include("customer.urls")),
     path(f"{API_ROOT}/v1/person/", include("person.urls")),
     path(f"{API_ROOT}/v1/rfq/", include("rfq.urls")),
+    path(f"{API_ROOT}/v1/sales/", include("sales.urls")),
+    path(f"{API_ROOT}/v1/email-marketing/", include("email_marketing.urls")),
+    # AG-UI endpoints
+    path("", include("agui_urls")),
     path("", include("django_prometheus.urls")),
 ]
 

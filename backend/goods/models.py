@@ -115,6 +115,16 @@ class Product(SoftDeleteModel, ExtIdMixin):
         verbose_name=_('Технические параметры'),
         help_text=_('Технические характеристики товара в формате JSON')
     )
+    complex_name = models.CharField(
+        max_length=512,
+        verbose_name=_('Комплексное наименование'),
+        help_text=_('Комплексное наименование товара')
+    )
+    description = models.TextField(
+        blank=True,
+        verbose_name=_('Описание'),
+        help_text=_('Описание товара')
+    )
 
     class Meta:
         verbose_name = _('Товар')
@@ -138,19 +148,19 @@ class Product(SoftDeleteModel, ExtIdMixin):
 
 
 # Сигналы для автоматической индексации товаров в MeiliSearch
-@receiver(post_save, sender=Product)
-def index_product_on_save(sender, instance, created, **kwargs):
-    """Индексируем товар при создании или обновлении."""
-    from django.conf import settings
-    
-    if settings.ENVIRONMENT == "test":
-        return
-    
-    try:
-        from goods.tasks import index_products
-        index_products.delay([instance.id])
-    except Exception as e:
-        print(f"Ошибка при индексации товара {instance.id}: {e}")
+#@receiver(post_save, sender=Product)
+#def index_product_on_save(sender, instance, created, **kwargs):
+#    """Индексируем товар при создании или обновлении."""
+#    from django.conf import settings
+#    
+#    if settings.ENVIRONMENT == "test":
+#        return
+#    
+#    try:
+#        from goods.tasks import index_products
+#        index_products.delay([instance.id])
+#    except Exception as e:
+#        print(f"Ошибка при индексации товара {instance.id}: {e}")
 
 
 @receiver(post_delete, sender=Product)

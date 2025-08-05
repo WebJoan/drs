@@ -1,12 +1,14 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from core.mixins import ExtIdMixin
+from core.mixins import ExtIdMixin, TimestampsMixin
+from django_softdelete.models import SoftDeleteModel
 
 
-class Company(ExtIdMixin, models.Model):
+class Company(SoftDeleteModel, ExtIdMixin, TimestampsMixin):
     """Модель для представления компаний-клиентов"""
     
     class CompanyTypeChoices(models.TextChoices):
+        NOT_DEFINED = 'not_defined', _('Не определен')
         MANUFACTURER = 'manufacturer', _('Производитель')
         DISTRIBUTOR = 'distributor', _('Дистрибьютор')
         INTEGRATOR = 'integrator', _('Интегратор')
@@ -14,20 +16,22 @@ class Company(ExtIdMixin, models.Model):
         OTHER = 'other', _('Другое')
     
     class StatusChoices(models.TextChoices):
+        NOT_DEFINED = 'not_defined', _('Не определен')
         ACTIVE = 'active', _('Активный')
         POTENTIAL = 'potential', _('Потенциальный')
         INACTIVE = 'inactive', _('Неактивный')
         BLACKLIST = 'blacklist', _('Черный список')
     
     name = models.CharField(
-        max_length=200,
+        max_length=255,
         verbose_name=_('Название компании'),
         help_text=_('Полное наименование компании')
     )
     
     short_name = models.CharField(
-        max_length=100,
+        max_length=512,
         blank=True,
+        null=True,
         verbose_name=_('Краткое название'),
         help_text=_('Краткое название для удобства отображения')
     )
@@ -35,7 +39,7 @@ class Company(ExtIdMixin, models.Model):
     company_type = models.CharField(
         max_length=20,
         choices=CompanyTypeChoices.choices,
-        default=CompanyTypeChoices.END_USER,
+        default=CompanyTypeChoices.NOT_DEFINED,
         verbose_name=_('Тип компании')
     )
     
@@ -47,48 +51,55 @@ class Company(ExtIdMixin, models.Model):
     )
     
     inn = models.CharField(
-        max_length=12,
+        max_length=50,
         blank=True,
         verbose_name=_('ИНН'),
         help_text=_('Идентификационный номер налогоплательщика')
     )
     
     ogrn = models.CharField(
-        max_length=15,
+        max_length=50,
         blank=True,
+        null=True,
         verbose_name=_('ОГРН'),
         help_text=_('Основной государственный регистрационный номер')
     )
     
     legal_address = models.TextField(
         blank=True,
+        null=True,
         verbose_name=_('Юридический адрес')
     )
     
     actual_address = models.TextField(
         blank=True,
+        null=True,
         verbose_name=_('Фактический адрес')
     )
     
     website = models.URLField(
         blank=True,
+        null=True,
         verbose_name=_('Веб-сайт')
     )
     
     phone = models.CharField(
-        max_length=20,
+        max_length=255,
         blank=True,
+        null=True,
         verbose_name=_('Телефон')
     )
     
     email = models.EmailField(
         blank=True,
+        null=True,
         verbose_name=_('Email')
     )
     
     industry = models.CharField(
         max_length=200,
         blank=True,
+        null=True,
         verbose_name=_('Отрасль'),
         help_text=_('Основная отрасль деятельности')
     )
@@ -121,18 +132,9 @@ class Company(ExtIdMixin, models.Model):
     
     notes = models.TextField(
         blank=True,
+        null=True,
         verbose_name=_('Заметки'),
         help_text=_('Дополнительная информация о компании')
-    )
-    
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name=_('Дата создания')
-    )
-    
-    updated_at = models.DateTimeField(
-        auto_now=True,
-        verbose_name=_('Дата обновления')
     )
     
     class Meta:

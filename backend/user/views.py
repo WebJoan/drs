@@ -99,6 +99,11 @@ class UserViewSet(ImprovedViewSet):
     def get_queryset(self):
         queryset = super().get_queryset()
 
+        # Фильтрация по роли
+        role = self.request.query_params.get('role', None)
+        if role:
+            queryset = queryset.filter(role=role)
+
         # Поиск по имени, фамилии, email, username
         search = self.request.query_params.get('search', None)
         if search:

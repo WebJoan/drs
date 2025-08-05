@@ -26,6 +26,16 @@ app.conf.task_queues = [
         Exchange(settings.RABBITMQ_GOODS_QUEUE),
         routing_key=settings.RABBITMQ_GOODS_QUEUE,
     ),
+    Queue(
+        settings.RABBITMQ_EMAIL_QUEUE,
+        Exchange(settings.RABBITMQ_EMAIL_QUEUE),
+        routing_key=settings.RABBITMQ_EMAIL_QUEUE,
+    ),
+    Queue(
+        settings.RABBITMQ_CUSTOMER_QUEUE,
+        Exchange(settings.RABBITMQ_CUSTOMER_QUEUE),
+        routing_key=settings.RABBITMQ_CUSTOMER_QUEUE,
+    ),
 ]
 
 # Импортируем задачи после настройки Django

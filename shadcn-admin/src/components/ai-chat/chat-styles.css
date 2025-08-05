@@ -1,0 +1,53 @@
+/* Стили для AI чата */
+.copilot-wrapper {
+  height: 100%;
+  width: 100%;
+}
+
+/* Анимации для сообщений */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.message-animation {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+/* Эффект печатания */
+.typing-cursor {
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 50% {
+    opacity: 1;
+  }
+  51%, 100% {
+    opacity: 0;
+  }
+}
+
+/* Улучшенные скроллбары */
+.chat-scrollarea::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-scrollarea::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-scrollarea::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 9999px;
+}
+
+.chat-scrollarea::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--border) / 0.8);
+}

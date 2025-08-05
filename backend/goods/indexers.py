@@ -20,7 +20,9 @@ class ProductIndexer(MeilisearchModelIndexer[Product]):
             "product_manager_id",
             "product_manager_name",
             "group_id",
-            "group_name"
+            "group_name",
+            "complex_name",
+            "description"
         ],
         "searchableAttributes": [
             "name",  # Высший приоритет - точное название товара
@@ -29,7 +31,9 @@ class ProductIndexer(MeilisearchModelIndexer[Product]):
             "group_name",  # Четвертый приоритет - группа
             "product_manager_name",  # Пятый приоритет - менеджер
             "tech_params_searchable",  # Шестой приоритет - технические параметры
-            "transliterated_search"  # Низший приоритет - транслитерированный поиск
+            "transliterated_search",  # Низший приоритет - транслитерированный поиск
+            "complex_name",
+            "description"
         ],
         "rankingRules": [
             "words",  # Количество найденных слов из запроса
@@ -43,7 +47,9 @@ class ProductIndexer(MeilisearchModelIndexer[Product]):
             "name",
             "brand_name",
             "subgroup_name",
-            "group_name"
+            "group_name",
+            "complex_name",
+            "description"
         ],
         "displayedAttributes": [
             "id",
@@ -52,7 +58,9 @@ class ProductIndexer(MeilisearchModelIndexer[Product]):
             "subgroup_name",
             "group_name",
             "product_manager_name",
-            "tech_params"
+            "tech_params",
+            "complex_name",
+            "description"
         ],
         "stopWords": [],  # Пустой список стоп-слов для технических терминов
         "synonyms": {},   # Можно добавить синонимы в будущем

@@ -3,7 +3,7 @@ import axios from 'axios'
 const API_ROOT_URL = '/api/v1'
 
 // Функция для получения CSRF токена из мета тега или куки
-const getCSRFToken = (): string | null => {
+export const getCSRFToken = (): string | null => {
   // Пытаемся получить из мета тега
   const metaTag = document.querySelector('meta[name="csrf-token"]')
   if (metaTag) {

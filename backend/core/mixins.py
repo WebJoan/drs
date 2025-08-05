@@ -26,3 +26,6 @@ class TimestampsMixin(models.Model):
         auto_now=True,
         verbose_name=_('Дата обновления'),
     )
+
+    class Meta:
+        abstract = True

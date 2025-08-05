@@ -1,0 +1,95 @@
+/* Стили для эмуляции стриминга в CopilotKit */
+
+/* Анимация печатания для сообщений агента */
+.copilot-message-assistant {
+  animation: typewriter 0.1s steps(1) forwards;
+}
+
+@keyframes typewriter {
+  from {
+    width: 0;
+    opacity: 0;
+  }
+  to {
+    width: 100%;
+    opacity: 1;
+  }
+}
+
+/* Курсор печатания */
+.copilot-message-assistant::after {
+  content: '|';
+  animation: blink 1s infinite;
+  color: #666;
+}
+
+@keyframes blink {
+  0%, 50% {
+    opacity: 1;
+  }
+  51%, 100% {
+    opacity: 0;
+  }
+}
+
+/* Плавное появление новых частей текста */
+.copilot-streaming-text {
+  animation: fadeInChar 0.1s ease-in-out;
+}
+
+@keyframes fadeInChar {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Индикатор набора текста */
+.typing-indicator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #666;
+  font-style: italic;
+}
+
+.typing-indicator::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Улучшенный стиль для ответов агента */
+.copilot-chat-message[data-role="assistant"] {
+  position: relative;
+  overflow: hidden;
+}
+
+.copilot-chat-message[data-role="assistant"] .message-content {
+  animation: revealText 0.05s linear forwards;
+}
+
+@keyframes revealText {
+  from {
+    max-width: 0;
+  }
+  to {
+    max-width: 100%;
+  }
+}

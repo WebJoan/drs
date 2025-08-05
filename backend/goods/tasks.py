@@ -48,6 +48,8 @@ def update_products_from_mysql():
                     g.tovmark AS subgroup_name,
                     g.typecode AS group_id,
                     g.tovgroup AS group_name,
+                    w.complex AS complex_name,
+                    w.description AS description,
                     i.timestamp AS last_bill,
                     inv.user AS invoice_user,
                     COALESCE(
@@ -75,6 +77,7 @@ def update_products_from_mysql():
                 ) latest ON i.mainbase = latest.mainbase
                    AND i.timestamp = latest.max_timestamp
                 INNER JOIN mainbase m ON m.id = i.mainbase
+                INNER JOIN mainwide w ON w.mainbase = m.id
                 INNER JOIN brand b ON m.brand = b.name
                 INNER JOIN invoice inv ON inv.id = i.invoice
                 INNER JOIN groupsb g ON m.mgroup = g.mgroup
@@ -199,6 +202,8 @@ def update_products_from_mysql():
                         "brand": brand,
                         "product_manager": product_manager,
                         "tech_params": tech_params,
+                        "complex_name": item["complex_name"],
+                        "description": item["description"],
                     },
                 )
 
@@ -274,7 +279,7 @@ def export_parts_to_csv():
                         '}')
                      FROM metrinfo t
                      JOIN metrics tp ON t.metrics = tp.id
-                     WHERE t.mainbase = m.id
+                     WHERE t.mainbase = i.mainbase
                     ), '{}'
                 ) AS tech_params
             FROM mainbase m

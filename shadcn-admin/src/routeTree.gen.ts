@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedAiChatRouteImport } from './routes/_authenticated/ai-chat'
 import { Route as errors503RouteImport } from './routes/(errors)/503'
 import { Route as errors500RouteImport } from './routes/(errors)/500'
 import { Route as errors404RouteImport } from './routes/(errors)/404'
@@ -27,6 +28,7 @@ import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedRfqIndexRouteImport } from './routes/_authenticated/rfq/index'
 import { Route as AuthenticatedHelpCenterIndexRouteImport } from './routes/_authenticated/help-center/index'
 import { Route as AuthenticatedGoodsIndexRouteImport } from './routes/_authenticated/goods/index'
+import { Route as AuthenticatedEmailMarketingIndexRouteImport } from './routes/_authenticated/email-marketing/index'
 import { Route as AuthenticatedCustomersIndexRouteImport } from './routes/_authenticated/customers/index'
 import { Route as AuthenticatedChatsIndexRouteImport } from './routes/_authenticated/chats/index'
 import { Route as AuthenticatedAppsIndexRouteImport } from './routes/_authenticated/apps/index'
@@ -46,6 +48,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAiChatRoute = AuthenticatedAiChatRouteImport.update({
+  id: '/ai-chat',
+  path: '/ai-chat',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const errors503Route = errors503RouteImport.update({
@@ -131,6 +138,12 @@ const AuthenticatedGoodsIndexRoute = AuthenticatedGoodsIndexRouteImport.update({
   path: '/goods/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedEmailMarketingIndexRoute =
+  AuthenticatedEmailMarketingIndexRouteImport.update({
+    id: '/email-marketing/',
+    path: '/email-marketing/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedCustomersIndexRoute =
   AuthenticatedCustomersIndexRouteImport.update({
     id: '/customers/',
@@ -206,6 +219,7 @@ export interface FileRoutesByFullPath {
   '/404': typeof errors404Route
   '/500': typeof errors500Route
   '/503': typeof errors503Route
+  '/ai-chat': typeof AuthenticatedAiChatRoute
   '/': typeof AuthenticatedIndexRoute
   '/rfq/$rfqId': typeof AuthenticatedRfqRfqIdRoute
   '/rfq/create': typeof AuthenticatedRfqCreateRoute
@@ -217,6 +231,7 @@ export interface FileRoutesByFullPath {
   '/apps': typeof AuthenticatedAppsIndexRoute
   '/chats': typeof AuthenticatedChatsIndexRoute
   '/customers': typeof AuthenticatedCustomersIndexRoute
+  '/email-marketing': typeof AuthenticatedEmailMarketingIndexRoute
   '/goods': typeof AuthenticatedGoodsIndexRoute
   '/help-center': typeof AuthenticatedHelpCenterIndexRoute
   '/rfq': typeof AuthenticatedRfqIndexRoute
@@ -235,6 +250,7 @@ export interface FileRoutesByTo {
   '/404': typeof errors404Route
   '/500': typeof errors500Route
   '/503': typeof errors503Route
+  '/ai-chat': typeof AuthenticatedAiChatRoute
   '/': typeof AuthenticatedIndexRoute
   '/rfq/$rfqId': typeof AuthenticatedRfqRfqIdRoute
   '/rfq/create': typeof AuthenticatedRfqCreateRoute
@@ -246,6 +262,7 @@ export interface FileRoutesByTo {
   '/apps': typeof AuthenticatedAppsIndexRoute
   '/chats': typeof AuthenticatedChatsIndexRoute
   '/customers': typeof AuthenticatedCustomersIndexRoute
+  '/email-marketing': typeof AuthenticatedEmailMarketingIndexRoute
   '/goods': typeof AuthenticatedGoodsIndexRoute
   '/help-center': typeof AuthenticatedHelpCenterIndexRoute
   '/rfq': typeof AuthenticatedRfqIndexRoute
@@ -267,6 +284,7 @@ export interface FileRoutesById {
   '/(errors)/404': typeof errors404Route
   '/(errors)/500': typeof errors500Route
   '/(errors)/503': typeof errors503Route
+  '/_authenticated/ai-chat': typeof AuthenticatedAiChatRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/rfq/$rfqId': typeof AuthenticatedRfqRfqIdRoute
   '/_authenticated/rfq/create': typeof AuthenticatedRfqCreateRoute
@@ -278,6 +296,7 @@ export interface FileRoutesById {
   '/_authenticated/apps/': typeof AuthenticatedAppsIndexRoute
   '/_authenticated/chats/': typeof AuthenticatedChatsIndexRoute
   '/_authenticated/customers/': typeof AuthenticatedCustomersIndexRoute
+  '/_authenticated/email-marketing/': typeof AuthenticatedEmailMarketingIndexRoute
   '/_authenticated/goods/': typeof AuthenticatedGoodsIndexRoute
   '/_authenticated/help-center/': typeof AuthenticatedHelpCenterIndexRoute
   '/_authenticated/rfq/': typeof AuthenticatedRfqIndexRoute
@@ -299,6 +318,7 @@ export interface FileRouteTypes {
     | '/404'
     | '/500'
     | '/503'
+    | '/ai-chat'
     | '/'
     | '/rfq/$rfqId'
     | '/rfq/create'
@@ -310,6 +330,7 @@ export interface FileRouteTypes {
     | '/apps'
     | '/chats'
     | '/customers'
+    | '/email-marketing'
     | '/goods'
     | '/help-center'
     | '/rfq'
@@ -328,6 +349,7 @@ export interface FileRouteTypes {
     | '/404'
     | '/500'
     | '/503'
+    | '/ai-chat'
     | '/'
     | '/rfq/$rfqId'
     | '/rfq/create'
@@ -339,6 +361,7 @@ export interface FileRouteTypes {
     | '/apps'
     | '/chats'
     | '/customers'
+    | '/email-marketing'
     | '/goods'
     | '/help-center'
     | '/rfq'
@@ -359,6 +382,7 @@ export interface FileRouteTypes {
     | '/(errors)/404'
     | '/(errors)/500'
     | '/(errors)/503'
+    | '/_authenticated/ai-chat'
     | '/_authenticated/'
     | '/_authenticated/rfq/$rfqId'
     | '/_authenticated/rfq/create'
@@ -370,6 +394,7 @@ export interface FileRouteTypes {
     | '/_authenticated/apps/'
     | '/_authenticated/chats/'
     | '/_authenticated/customers/'
+    | '/_authenticated/email-marketing/'
     | '/_authenticated/goods/'
     | '/_authenticated/help-center/'
     | '/_authenticated/rfq/'
@@ -406,6 +431,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/ai-chat': {
+      id: '/_authenticated/ai-chat'
+      path: '/ai-chat'
+      fullPath: '/ai-chat'
+      preLoaderRoute: typeof AuthenticatedAiChatRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/(errors)/503': {
@@ -518,6 +550,13 @@ declare module '@tanstack/react-router' {
       path: '/goods'
       fullPath: '/goods'
       preLoaderRoute: typeof AuthenticatedGoodsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/email-marketing/': {
+      id: '/_authenticated/email-marketing/'
+      path: '/email-marketing'
+      fullPath: '/email-marketing'
+      preLoaderRoute: typeof AuthenticatedEmailMarketingIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/customers/': {
@@ -640,6 +679,7 @@ const AuthenticatedRfqQuotationsRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
+  AuthenticatedAiChatRoute: typeof AuthenticatedAiChatRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedRfqRfqIdRoute: typeof AuthenticatedRfqRfqIdRoute
   AuthenticatedRfqCreateRoute: typeof AuthenticatedRfqCreateRoute
@@ -647,6 +687,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAppsIndexRoute: typeof AuthenticatedAppsIndexRoute
   AuthenticatedChatsIndexRoute: typeof AuthenticatedChatsIndexRoute
   AuthenticatedCustomersIndexRoute: typeof AuthenticatedCustomersIndexRoute
+  AuthenticatedEmailMarketingIndexRoute: typeof AuthenticatedEmailMarketingIndexRoute
   AuthenticatedGoodsIndexRoute: typeof AuthenticatedGoodsIndexRoute
   AuthenticatedHelpCenterIndexRoute: typeof AuthenticatedHelpCenterIndexRoute
   AuthenticatedRfqIndexRoute: typeof AuthenticatedRfqIndexRoute
@@ -655,6 +696,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRouteRoute: AuthenticatedSettingsRouteRouteWithChildren,
+  AuthenticatedAiChatRoute: AuthenticatedAiChatRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedRfqRfqIdRoute: AuthenticatedRfqRfqIdRoute,
   AuthenticatedRfqCreateRoute: AuthenticatedRfqCreateRoute,
@@ -662,6 +704,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAppsIndexRoute: AuthenticatedAppsIndexRoute,
   AuthenticatedChatsIndexRoute: AuthenticatedChatsIndexRoute,
   AuthenticatedCustomersIndexRoute: AuthenticatedCustomersIndexRoute,
+  AuthenticatedEmailMarketingIndexRoute: AuthenticatedEmailMarketingIndexRoute,
   AuthenticatedGoodsIndexRoute: AuthenticatedGoodsIndexRoute,
   AuthenticatedHelpCenterIndexRoute: AuthenticatedHelpCenterIndexRoute,
   AuthenticatedRfqIndexRoute: AuthenticatedRfqIndexRoute,

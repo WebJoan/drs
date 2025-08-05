@@ -22,6 +22,20 @@ CSRF_USE_SESSIONS = False  # Используем куки вместо сесс
 # --------------------------------------------------------------------------------
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_ALL_ORIGINS = False  # Отключаем для безопасности
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+    # CopilotKit заголовки
+    "x-copilotkit-runtime-client-gql-version",
+    "x-copilotkit-frontend-version",
+]
 
 DEBUG = False
 SECRET_KEY = os.getenv("SECRET_KEY")
@@ -41,6 +55,7 @@ INSTALLED_APPS = [
     "django_prometheus",
     "django_celery_results",
     "corsheaders",
+    "django_filters",
     # Custom
     "authentication",
     "core",
@@ -50,6 +65,8 @@ INSTALLED_APPS = [
     "customer",
     "person", 
     "rfq",
+    "sales",
+    "email_marketing",
 ]
 
 MIDDLEWARE = [
@@ -59,6 +76,7 @@ MIDDLEWARE = [
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
+    "core.middleware.CopilotKitCSRFExemptMiddleware",  # Исключение для CopilotKit
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
@@ -162,8 +180,8 @@ DJANGO_SUPERUSER_PASSWORD = os.getenv("DJANGO_SUPERUSER_PASSWORD")
 # > Internationalization
 # --------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/4.0/topics/i18n/
-LANGUAGE_CODE = "en-us"
-TIME_ZONE = "UTC"
+LANGUAGE_CODE = "ru-ru"
+TIME_ZONE = "Europe/Moscow"
 USE_I18N = True
 USE_TZ = True
 
@@ -276,3 +294,6 @@ CELERY_TIMEZONE = "UTC"
 # Queues
 RABBITMQ_USER_QUEUE = os.getenv("RABBITMQ_USER_QUEUE", "user-queue")
 RABBITMQ_GOODS_QUEUE = os.getenv("RABBITMQ_GOODS_QUEUE", "goods-queue")
+RABBITMQ_CUSTOMER_QUEUE = os.getenv("RABBITMQ_CUSTOMER_QUEUE", "customer-queue")
+RABBITMQ_EMAIL_QUEUE = os.getenv("RABBITMQ_EMAIL_QUEUE", "email-queue")
+

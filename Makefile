@@ -65,6 +65,16 @@ backend.test.coverage:
 		coverage report && \
 		coverage html"
 
+backend.test_email_generation:
+	$(BACKEND_BASH_EXEC) "\
+		cd /home/drs && \
+		source backend/.env && \
+		python test_email_generation.py"
+
+backend.run_agui_server:
+	$(BACKEND_BASH_EXEC) "\
+		cd backend && \
+		python run_agui_server.py"
 
 # --------------------------------------------------
 # Frontend
@@ -101,7 +111,7 @@ start.lite.fast:
 	@docker compose --profile=lite up
 
 stop:
-	@docker compose down
+	@docker compose --profile=all down
 
 
 # --------------------------------------------------
@@ -122,6 +132,7 @@ help:
 	@echo "backend.shell: 				Opens the Django shell for the running instance"
 	@echo "backend.test:				Runs tests"
 	@echo "backend.test.coverage:			Runs tests and generates coverage report"
+	@echo "backend.test_email_generation:		Tests AI email generation with Agno (debug)"
 	@echo "----- FRONTEND ------------------------------------------------------------------------"
 	@echo "frontend.bash: 				Opens a bash session in the frontend container"
 	@echo "frontend.i18n: 				Runs i18n to generate translations"
@@ -230,3 +241,90 @@ setup.production.ssl:
 	@echo "⚠️  Убедитесь что домен jiman.ru указывает на ваш сервер!"
 	@read -p "Продолжить? (y/N) " confirm && [ "$$confirm" = "y" ] || exit 1
 	@$(MAKE) -s init.letsencrypt
+
+# ===== PGVECTOR COMMANDS =====
+
+# Настройка и запуск PgVector
+setup.pgvector:
+	@echo "🔧 Настройка PgVector для Agno..."
+	@cd backend && python setup_pgvector.py
+
+# Запуск только PgVector контейнера
+start.pgvector:
+	@echo "🚀 Запуск PgVector контейнера..."
+	@docker-compose up -d pgvector
+
+# Остановка PgVector контейнера
+stop.pgvector:
+	@echo "⏹️  Остановка PgVector контейнера..."
+	@docker-compose stop pgvector
+
+# Просмотр логов PgVector
+logs.pgvector:
+	@echo "📋 Логи PgVector контейнера:"
+	@docker-compose logs -f pgvector
+
+# Подключение к PgVector через psql
+psql.pgvector:
+	@echo "🔌 Подключение к PgVector базе данных..."
+	@docker exec -it django_react_starter_pgvector psql -U ai -d ai
+
+# Проверка статуса PgVector
+status.pgvector:
+	@echo "📊 Статус PgVector:"
+	@docker-compose ps pgvector
+	@echo "📊 Проверка готовности:"
+	@docker exec django_react_starter_pgvector pg_isready -U ai -d ai || echo "❌ PgVector не готов"
+
+# Сброс данных PgVector
+reset.pgvector:
+	@echo "🗑️  Сброс данных PgVector..."
+	@read -p "Это удалит все данные в PgVector. Продолжить? (y/N) " confirm && [ "$$confirm" = "y" ] || exit 1
+	@docker-compose stop pgvector
+	@docker-compose rm -f pgvector
+	@sudo rm -rf ./data/pgvector
+	@docker-compose up -d pgvector
+
+# Запуск примеров PgVector
+demo.pgvector:
+	@echo "🎯 Запуск демонстрации PgVector..."
+	@cd backend && python pgvector_example.py
+
+# Запуск асинхронных примеров PgVector
+demo.pgvector.async:
+	@echo "⚡ Запуск асинхронной демонстрации PgVector..."
+	@cd backend && python pgvector_async_example.py
+
+# Полная настройка PgVector (установка + настройка + тест)
+init.pgvector: start.pgvector setup.pgvector demo.pgvector
+
+# Бэкап данных PgVector
+backup.pgvector:
+	@echo "💾 Создание бэкапа PgVector..."
+	@mkdir -p ./backups
+	@docker exec django_react_starter_pgvector pg_dump -U ai -d ai > ./backups/pgvector_backup_$(shell date +%Y%m%d_%H%M%S).sql
+	@echo "✅ Бэкап сохранен в ./backups/"
+
+# Восстановление данных PgVector из бэкапа
+restore.pgvector:
+	@echo "📥 Восстановление PgVector из бэкапа..."
+	@ls -la ./backups/pgvector_backup_*.sql 2>/dev/null || (echo "❌ Нет доступных бэкапов в ./backups/" && exit 1)
+	@read -p "Введите имя файла бэкапа (без пути): " backup_file && \
+	 read -p "Это перезапишет все данные в PgVector. Продолжить? (y/N) " confirm && [ "$$confirm" = "y" ] && \
+	 docker exec -i django_react_starter_pgvector psql -U ai -d ai < ./backups/$$backup_file
+
+# Справка по командам PgVector
+help.pgvector:
+	@echo "📖 Доступные команды PgVector:"
+	@echo "  setup.pgvector      - Настройка и проверка PgVector"
+	@echo "  start.pgvector      - Запуск PgVector контейнера"
+	@echo "  stop.pgvector       - Остановка PgVector контейнера"
+	@echo "  logs.pgvector       - Просмотр логов PgVector"
+	@echo "  psql.pgvector       - Подключение к PgVector через psql"
+	@echo "  status.pgvector     - Проверка статуса PgVector"
+	@echo "  reset.pgvector      - Сброс данных PgVector"
+	@echo "  demo.pgvector       - Запуск примеров"
+	@echo "  demo.pgvector.async - Запуск асинхронных примеров"
+	@echo "  init.pgvector       - Полная инициализация PgVector"
+	@echo "  backup.pgvector     - Создание бэкапа"
+	@echo "  restore.pgvector    - Восстановление из бэкапа"

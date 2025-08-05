@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils'
 import { SearchProvider } from '@/context/search-context'
 import { SidebarProvider } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/layout/app-sidebar'
+import { CommandMenu } from '@/components/command-menu'
 import SkipToMain from '@/components/skip-to-main'
 import { useAuth } from '@/stores/authStore'
 import { useCurrentUser } from '@/hooks/useAuth'
@@ -99,6 +100,7 @@ export function AuthenticatedLayout({ children }: Props) {
         >
           {children ? children : <Outlet />}
         </div>
+        <CommandMenu />
       </SidebarProvider>
     </SearchProvider>
   )

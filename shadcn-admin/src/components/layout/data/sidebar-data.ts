@@ -20,6 +20,8 @@ import {
   IconShoppingCart,
   IconFileText,
   IconClipboardList,
+  IconMail,
+  IconRobot,
 } from '@tabler/icons-react'
 import { AudioWaveform, Command, GalleryVerticalEnd } from 'lucide-react'
 import { type SidebarData } from '../types'
@@ -116,6 +118,16 @@ export const roleNavGroups = {
           title: 'Приложения',
           url: '/apps',
           icon: IconPackages,
+        },
+        {
+          title: 'Email маркетинг',
+          url: '/email-marketing',
+          icon: IconMail,
+        },
+        {
+          title: 'AI Чат',
+          url: '/ai-chat',
+          icon: IconRobot,
         },
         {
           title: 'Чаты',
@@ -259,6 +271,16 @@ export const roleNavGroups = {
           icon: IconUsers,
         },
         {
+          title: 'Email маркетинг',
+          url: '/email-marketing',
+          icon: IconMail,
+        },
+        {
+          title: 'AI Чат',
+          url: '/ai-chat',
+          icon: IconRobot,
+        },
+        {
           title: 'Чаты',
           url: '/chats',
           badge: '3',
@@ -321,6 +343,11 @@ export const roleNavGroups = {
           title: 'Мои предложения',
           url: '/rfq/quotations',
           icon: IconClipboardList,
+        },
+        {
+          title: 'AI Чат',
+          url: '/ai-chat',
+          icon: IconRobot,
         },
         {
           title: 'Чаты',
